@@ -1,18 +1,22 @@
 <template>
     <div class="file-table">
         <div class="toolbar">
-            <el-button
+            <el-tooltip
+                effect="dark"
+                content="Reload">
+                <el-button
                     size="mini"
                     type="text"
                     icon="el-icon-refresh"
                     @click="reload" />
+            </el-tooltip>
             <el-input
-                    :class="{inactive: search === ''}"
-                    placeholder="search"
-                    prefix-icon="el-icon-search"
-                    v-model="search"
-                    size="mini"
-                    clearable />
+                :class="{inactive: search === ''}"
+                placeholder="search"
+                prefix-icon="el-icon-search"
+                v-model="search"
+                size="mini"
+                clearable />
         </div>
         <el-table
                 ref="table"

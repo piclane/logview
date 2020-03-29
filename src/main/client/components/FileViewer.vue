@@ -14,24 +14,33 @@
                 :prefix-icon="searching ? 'icon-loading' : 'el-icon-search'"
                 @keypress.enter.native="doSearch"
                 @clear="doSearch"/>
-            <el-button
-                title="Smart search"
-                size="mini"
-                icon="el-icon-sunny"
-                :type="searchSmart ? 'gray' : 'text'"
-                @click="toggleSearchSmart" />
-            <el-button
-                title="Download"
-                type="text"
-                size="mini"
-                icon="el-icon-download"
-                @click="doDownload"/>
-            <el-button
-                :title="scrollLock ? 'Scroll lock now' : 'Scroll lock'"
-                size="mini"
-                icon="el-icon-lock"
-                :type="scrollLock ? 'gray' : 'text'"
-                @click="toggleScrollLock" />
+            <el-tooltip
+                effect="dark"
+                :content="searchSmart ? 'Smart search is enabled' : 'Smart search is disabled'">
+                <el-button
+                    size="mini"
+                    icon="el-icon-sunny"
+                    :type="searchSmart ? 'gray' : 'text'"
+                    @click="toggleSearchSmart" />
+            </el-tooltip>
+            <el-tooltip
+                effect="dark"
+                content="Download">
+                <el-button
+                    type="text"
+                    size="mini"
+                    icon="el-icon-download"
+                    @click="doDownload"/>
+            </el-tooltip>
+            <el-tooltip
+                effect="dark"
+                :content="scrollLock ? 'Scroll lock is enabled' : 'Scroll lock is disabled'">
+                <el-button
+                    size="mini"
+                    icon="el-icon-lock"
+                    :type="scrollLock ? 'gray' : 'text'"
+                    @click="toggleScrollLock" />
+            </el-tooltip>
         </div>
         <file-renderer
             ref="fileRenderer"
