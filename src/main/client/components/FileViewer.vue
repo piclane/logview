@@ -1,0 +1,141 @@
+<template>
+    <div class="file-viewer">
+        <div class="toolbar">
+            <i class="el-icon-document"></i>
+            <span class="path">{{ path.toString().trim() }}</span>
+            <div class="space"></div>
+            <el-input
+                ref="searchInput"
+                placeholder="search"
+                size="mini"
+                clearable
+                v-model="search"
+                :class="{search: true, inactive: search === ''}"
+                :prefix-icon="searching ? 'icon-loading' : 'el-icon-search'"
+                @keypress.enter.native="doSearch"
+                @clear="doSearch"/>
+            <el-button
+                title="Smart search"
+                size="mini"
+                icon="el-icon-sunny"
+                :type="searchSmart ? 'gray' : 'text'"
+                @click="toggleSearchSmart" />
+            <el-button
+                title="Download"
+                type="text"
+                size="mini"
+                icon="el-icon-download"
+                @click="doDownload"/>
+            <el-button
+                :title="scrollLock ? 'Scroll lock now' : 'Scroll lock'"
+                size="mini"
+                icon="el-icon-lock"
+                :type="scrollLock ? 'gray' : 'text'"
+                @click="toggleScrollLock" />
+        </div>
+        <file-renderer
+            ref="fileRenderer"
+            :scrollLock="scrollLock"
+            @searching="searching = $event"/>
+        <div class="wrapper" v-show="path === ''"></div>
+    </div>
+</template>
+
+<script>
+    import FileRenderer from "@/components/FileRenderer.vue";
+    import {downloadFile} from "@/utils/api/FileApiClient";
+
+    export default {
+        name: 'file-viewer',
+        components: {FileRenderer},
+        data() {
+            return {
+                path: '',
+                search: '',
+                searching: false,
+                searchSmart: true,
+                scrollLock: false
+            };
+        },
+        created() {
+            this.$on('show-tail', path => {
+                this.path = path;
+                this.search = '';
+                this.searching = false;
+                this.$refs.fileRenderer.$emit('show-tail', path);
+            });
+
+            this.$on('show-head', path => {
+                this.path = path;
+                this.search = '';
+                this.searching = false;
+                this.$refs.fileRenderer.$emit('show-head', path);
+            });
+        },
+        methods: {
+            toggleScrollLock: function() {
+                this.scrollLock = !this.scrollLock;
+            },
+            toggleSearchSmart: function() {
+                this.searchSmart = !this.searchSmart;
+                if(this.search) {
+                    this.doSearch();
+                }
+            },
+            doDownload: function() {
+                downloadFile(this.path);
+            },
+            doSearch: function() {
+                this.$refs.searchInput.blur();
+                if(this.search) {
+                    this.$refs.fileRenderer.$emit('search', this.search, this.searchSmart);
+                } else {
+                    this.$emit('show-tail', this.path);
+                }
+            }
+        }
+    }
+</script>
+
+<style scoped>
+    .file-viewer {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .toolbar {
+        border-bottom: 1px solid #eee;
+        font-size: 12px;
+        background-color: royalblue;
+        color: white;
+    }
+
+    .toolbar .path {
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    .toolbar .el-button.el-button--gray {
+        color: #FFF;
+        background-color: rgba(0,0,0,.35);
+        border: none;
+    }
+
+    .toolbar .el-input >>> i.icon-loading {
+        width: 12px;
+        height: 12px;
+        line-height: 24px;
+    }
+
+    .wrapper {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(0,0,0,.4);
+        color: white;
+    }
+</style>
+<style src="../utils/Toolbar.css" scoped></style>
+<style src="../utils/Icon.css"></style>

@@ -1,0 +1,25 @@
+i.icon-loading {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-image: url("../assets/loading.svg");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    position: relative;
+    left: 3px;
+    top: -1px;
+}
+
+i.icon-searching {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-image: url("../assets/searching.svg");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: bottom;
+    margin: 0 3px;
+}

@@ -1,0 +1,16 @@
+<Context reloadable="true">
+    <!--
+        ルートディレクトリ一覧
+    -->
+    <Environment name="app/logview/dirs/log" value="/var/log" type="java.lang.String" />
+    <Environment name="app/logview/dirs/test" value="/Users/some-user/Documents/test" type="java.lang.String" />
+
+    <!--
+        ヘッダの追加アイコン
+    -->
+    <Environment name="app/logview/header" value="
+        &lt;a class='right' href='/somelink'>
+            &lt;i style='background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAABCRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmV4aWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIgogICAgICAgICAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICAgICAgICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyI+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjU8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjcyPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICAgICA8dGlmZjpZUmVzb2x1dGlvbj43MjwvdGlmZjpZUmVzb2x1dGlvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxYRGltZW5zaW9uPjI0PC9leGlmOlBpeGVsWERpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6Q29sb3JTcGFjZT4xPC9leGlmOkNvbG9yU3BhY2U+CiAgICAgICAgIDxleGlmOlBpeGVsWURpbWVuc2lvbj4yNDwvZXhpZjpQaXhlbFlEaW1lbnNpb24+CiAgICAgICAgIDxkYzpzdWJqZWN0PgogICAgICAgICAgICA8cmRmOkJhZy8+CiAgICAgICAgIDwvZGM6c3ViamVjdD4KICAgICAgICAgPHhtcDpNb2RpZnlEYXRlPjIwMTYtMDItMDRUMTc6MDI6NTU8L3htcDpNb2RpZnlEYXRlPgogICAgICAgICA8eG1wOkNyZWF0b3JUb29sPlBpeGVsbWF0b3IgMy40LjI8L3htcDpDcmVhdG9yVG9vbD4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CilwjMQAAADuSURBVEgNY2CgMWAEmf////9eIKVPZbtOMzIyVrJADTUG0vZUtuAPyDwmKhuKYdzwteAsMILAAOhnWai/C2Fi2GigmqsY4QMUoHkQwVIRuuWMwKQLk4PRzEhi6OpBfHCSxyYBygcHgJjaYAfIMpjr0C1+DhSYBRXkA9KFQLwTiE9AxbBRWUBBUWwS2HxwBqYQ6C0ZqNcKYGLYaKCaK2hBAPbBgEWyNNA1LVCXgoIIBLyBYiIQJlZSHKsoSBCokWaRjCuIRjMaanQMRByguoACHq5IpsBIVK00twBWFp0C2vsD1W6KefDihmKT8BkAAB6UW/JHZPuUAAAAAElFTkSuQmCC);'>&lt;/i>
+        &lt;/a>
+    " type="java.lang.String" />
+</Context>
