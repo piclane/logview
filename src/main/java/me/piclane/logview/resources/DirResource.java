@@ -41,6 +41,7 @@ public class DirResource {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @javax.ws.rs.Path("/list")
     public List<LogFile> list(@FormParam("path") String path, @FormParam("query") String query) throws IOException {
         Path _path = LogRoot.of(path);
         if(!Files.isDirectory(_path)) {

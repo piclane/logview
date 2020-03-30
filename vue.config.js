@@ -20,7 +20,7 @@ module.exports = {
             }
         }
     },
-    outputDir: 'src/main/webapp',
+    outputDir: 'dist/',
     pages: {
         index: {
             entry: 'src/main/client/index.ts',

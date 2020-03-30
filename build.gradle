@@ -32,13 +32,22 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-// ブランチ名を取得する
-static def readBranch() {
-    return "git name-rev --name-only HEAD"
-            .execute().text
-            .trim()
-            .replaceAll(/remotes\/origin\//, "")
-            .replaceAll(/\^0$/, "")
+task buildNpm() {
+    group = 'build'
+    description = 'npm run build'
+    doLast {
+        "npm install"
+                .execute()
+                .waitForProcessOutput(System.out, System.err)
+
+        "npm run build"
+                .execute()
+                .waitForProcessOutput(System.out, System.err)
+
+        ant.move(todir: "${rootDir}/web/", overwrite: false) {
+            fileset(dir: "${rootDir}/dist/")
+        }
+    }
 }
 
 war {
@@ -48,7 +57,7 @@ war {
 
     def branchName = readBranch()
     switch (branchName) {
-        case { System.getProperty("idea.active", "false") == "true" }:
+        case { isIdea() }:
             archiveName = "${project.name}.war"
             break
         case 'master':
@@ -62,4 +71,28 @@ war {
             archiveName = "${project.name}_${project.version}_${branchName}.war"
             break
     }
+
+    dependsOn buildNpm
+}
+
+/**
+ * ブランチ名を取得する
+ *
+ * @return ブランチ名
+ */
+static def readBranch() {
+    return "git name-rev --name-only HEAD"
+            .execute().text
+            .trim()
+            .replaceAll(/remotes\/origin\//, "")
+            .replaceAll(/\^0$/, "")
+}
+
+/**
+ * IntelliJ からの実行かどうかを取得します
+ *
+ * @return IntelliJ からの実行の場合 true そうでない場合 false
+ */
+static def isIdea() {
+    return System.getProperty("idea.active", "false") == "true"
 }

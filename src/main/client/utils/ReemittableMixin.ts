@@ -1,8 +1,6 @@
 import {Mixin} from "vue-mixin-decorator";
 import {Vue} from "vue-property-decorator";
 
-/* eslint-disable @typescript-eslint/ban-ts-ignore @typescript-eslint/no-explicit-any */
-
 /**
  * イベントを再放出可能にする為のミックスイン
  */
@@ -32,5 +30,3 @@ export default class ReemittableMixin extends Vue {
 
 
 }
-
-/* eslint-enable @typescript-eslint/ban-ts-ignore @typescript-eslint/no-explicit-any */

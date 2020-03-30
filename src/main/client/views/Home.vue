@@ -74,14 +74,15 @@ export default {
     background: #9d9ea0;
   }
 
-  .multipane-resizer {
+  .multipane .multipane-resizer {
     margin-left: 0;
     left: 0;
     background: #333;
     width: 7px;
+    z-index: 10;
   }
 
-  .multipane-resizer:before {
+  .multipane .multipane-resizer:before {
     content: '';
     position: absolute;
     display: inline-block;
