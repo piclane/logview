@@ -230,6 +230,6 @@ export class ProcedureApiClient {
     private static createWsUrl(): string {
         const l = window.location,
             wsProtocol = l.protocol === 'https:' ? 'wss:' : 'ws:';
-        return `${wsProtocol}//${l.host}/logview/api/procedure`;
+        return `${wsProtocol}//${l.host}${process.env.BASE_URL}api/procedure`;
     }
 }

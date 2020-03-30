@@ -27,7 +27,8 @@ interface ComponentData {
  */
 export default class FileRendererViewModel {
     /** 表示される最大行数 */
-    private static readonly bufferLines = 100;
+    private static readonly bufferLines =
+        process.env.NODE_ENV === 'development' ? 100 : 2000;
 
     private readonly client: ProcedureApiClient;
 
