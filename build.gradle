@@ -37,16 +37,22 @@ task buildNpm() {
     description = 'npm run build'
     doLast {
         "npm install"
-                .execute()
-                .waitForProcessOutput(System.out, System.err)
+            .execute(null, projectDir)
+            .waitForProcessOutput(System.out, System.err)
 
         "npm run build"
-                .execute()
-                .waitForProcessOutput(System.out, System.err)
+            .execute(null, projectDir)
+            .waitForProcessOutput(System.out, System.err)
 
-        ant.move(todir: "${rootDir}/web/", overwrite: false) {
-            fileset(dir: "${rootDir}/dist/")
+        ant.move(todir: "${buildDir}/web/", overwrite: false) {
+            fileset(dir: "${projectDir}/dist/")
         }
+    }
+}
+
+task buildWeb() {
+    ant.copy(todir: "${buildDir}/web/") {
+        fileset(dir: "${projectDir}/web/")
     }
 }
 
@@ -72,7 +78,8 @@ war {
             break
     }
 
-    dependsOn buildNpm
+    dependsOn 'buildNpm'
+    dependsOn 'buildWeb'
 }
 
 /**
