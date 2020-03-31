@@ -10,8 +10,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * ディレクトリ関連の Api
@@ -42,26 +41,32 @@ public class DirResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @javax.ws.rs.Path("/list")
-    public List<LogFile> list(@FormParam("path") String path, @FormParam("query") String query) throws IOException {
+    public Collection<LogFile> list(@FormParam("path") String path, @FormParam("query") String query) throws IOException {
         Path _path = LogRoot.of(path);
         if(!Files.isDirectory(_path)) {
             throw new BadRequestException("path にはディレクトリを指定して下さい");
         }
 
         // ログファイル一覧取得
-        List<LogFile> files = new LinkedList<>();
         if(_path.getNameCount() == 0) {
+            Set<LogFile> files = new LinkedHashSet<>();
             for(LogRoot r: LogRoot.DIRS) {
                 LogFile f = LogFile.from(r.dir);
                 f.setName(r.name);
                 files.add(f);
             }
+            if(LogRoot.ROOT != null) {
+                for (Path p : Files.newDirectoryStream(LogRoot.ROOT, LOG_FILTER)) {
+                    files.add(LogFile.from(p));
+                }
+            }
+            return files;
         } else {
+            List<LogFile> files = new LinkedList<>();
             for(Path p: Files.newDirectoryStream(_path, LOG_FILTER)) {
                 files.add(LogFile.from(p));
             }
+            return files;
         }
-
-        return files;
     }
 }

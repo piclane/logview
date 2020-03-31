@@ -1,12 +1,24 @@
 <Context reloadable="true">
     <!--
-        ルートディレクトリ一覧
+        Root Directory
+
+        You can also use environment variables in value, like $HOME or ${HOME} or ${FOO:-/path/to} or ${BAR:+/path/to}
     -->
-    <Environment name="app/logview/dirs/log" value="/var/log" type="java.lang.String" />
-    <Environment name="app/logview/dirs/test" value="/Users/some-user/Documents/test" type="java.lang.String" />
+    <Environment name="app/logview/rootDir" value="/path/to/root" type="java.lang.String" />
 
     <!--
-        ヘッダの追加アイコン
+        Virtual directory under the root directories
+
+        You can also use environment variables in value, like $HOME or ${HOME} or ${FOO:-/path/to} or ${BAR:+/path/to}
+    -->
+    <Environment name="app/logview/dirs/log" value="/var/log" type="java.lang.String" />
+    <Environment name="app/logview/dirs/test" value="/path/to/test" type="java.lang.String" />
+    <Environment name="app/logview/dirs/home" value="${HOME}" type="java.lang.String" />
+
+    <!--
+        HTML to add to the header
+
+        You can also use environment variables in value, like $HOME or ${HOME} or ${FOO:-/path/to} or ${BAR:+/path/to}
     -->
     <Environment name="app/logview/header" value="
         &lt;a class='right' href='/somelink'>

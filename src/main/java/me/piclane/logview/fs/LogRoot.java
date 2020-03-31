@@ -1,5 +1,7 @@
 package me.piclane.logview.fs;
 
+import me.piclane.logview.util.Environment;
+
 import javax.naming.*;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
@@ -18,11 +20,16 @@ import java.util.regex.Pattern;
  * @author yohei_hina
  */
 public class LogRoot {
+    /** ルートディレクトリ */
+    public static final Path ROOT;
+
     /** 全てのログディレクトリルート */
     public static final List<LogRoot> DIRS;
 
     static {
         List<LogRoot> dirs = new LinkedList<>();
+
+        Path root = null;
         try {
             Context initContext = new InitialContext();
             Context envContext = (Context)initContext.lookup("java:/comp/env");
@@ -31,7 +38,7 @@ public class LogRoot {
                 NameClassPair pair = ne.nextElement();
                 String name = pair.getName();
                 Object _dir = envContext.lookup("app/logview/dirs/" + name);
-                Path dir = Paths.get(_dir.toString());
+                Path dir = Paths.get(Environment.expand(_dir));
                 if(!Files.isDirectory(dir)) {
                     continue;
                 }
@@ -41,33 +48,52 @@ public class LogRoot {
             throw new RuntimeException(e);
         }
         DIRS = Collections.unmodifiableList(dirs);
+
+        try {
+            Context initContext = new InitialContext();
+            Context envContext = (Context)initContext.lookup("java:/comp/env");
+            Object _root = envContext.lookup("app/logview/rootDir");
+            if(_root != null) {
+                root = Paths.get(Environment.expand(_root));
+            }
+        } catch (NamingException e) {
+            // nop
+        }
+        ROOT = root;
     }
 
-    /** SERVLET_REQUEST_PARSER で使用するリクエスト文字列のパターン */
-    private static final Pattern REQUEST_PATTERN = Pattern.compile("^/([^/]+)(/(.+))?$");
+    /** パスのパターン */
+    private static final Pattern PATH_PATTERN = Pattern.compile("^/([^/]+)(/(.+))?$");
 
     public static Path of(String path) throws ClientErrorException {
         if("/".equals(path)) {
             return Paths.get("/");
         }
 
-        Matcher m = REQUEST_PATTERN.matcher(path);
+        Matcher m = PATH_PATTERN.matcher(path);
         if(m.find()) {
-            Path rootDir = findDir(m.group(1));
+            String rootDirName = m.group(1);
+            Path rootDir = findDir(rootDirName);
+            if(rootDir == null && ROOT != null) {
+                Path _rootDir = ROOT.resolve(rootDirName);
+                if(Files.exists(_rootDir)) {
+                    rootDir = _rootDir;
+                }
+            }
             if(rootDir == null) {
-                throw new BadRequestException("指定されたルートディレクトリは存在しません");
+                throw new BadRequestException("The specified directory does not exist.");
             }
             String relativePath = m.group(3);
             Path target = relativePath == null ? rootDir : rootDir.resolve(relativePath).normalize();
             if(!target.startsWith(rootDir)) {
-                throw new BadRequestException("ルートディレクトリの外はアクセスできません");
+                throw new BadRequestException("The specified resource is forbidden.");
             }
             if(!Files.exists(target)) {
-                throw new BadRequestException("指定されたリソースは存在しません");
+                throw new BadRequestException("The specified resource does not exist.");
             }
             return target;
         } else {
-            throw new BadRequestException("パスの形式が正しくありません");
+            throw new BadRequestException("Invalid path format.");
         }
     }
 
