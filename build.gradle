@@ -12,11 +12,21 @@ repositories {
     jcenter()
 }
 
+sourceSets {
+    test {
+        resources {
+            srcDir 'src/test/java'
+        }
+    }
+}
+
 dependencies {
     def jerseyVersion = 2.25
     compileOnly 'javax.websocket:javax.websocket-api:1.1'
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
 
+    implementation "org.slf4j:slf4j-api:1.7.30"
+    implementation "ch.qos.logback:logback-core:1.2.3"
     implementation 'javax.servlet:jstl:1.2'
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'com.github.albfernandez:juniversalchardet:2.2.0'

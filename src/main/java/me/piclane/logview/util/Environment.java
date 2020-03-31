@@ -1,5 +1,8 @@
 package me.piclane.logview.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -15,6 +18,9 @@ import java.util.regex.Pattern;
  * @author yohei_hina
  */
 public class Environment {
+    /** logger */
+    private static final Logger logger = LoggerFactory.getLogger(Environment.class);
+
     /** 展開対象のパターン */
     private static final Pattern PATTERN_PARAM = Pattern.compile("\\$\\{(?<name1>[^}]+)}|\\$(?<name2>[a-zA-Z0-9_]+)|(?:^(?<name3>@.*)$)");
 
@@ -84,6 +90,7 @@ public class Environment {
             return String.join("\n",
                 Files.readAllLines(target, StandardCharsets.UTF_8));
         } catch(IOException e) {
+            logger.error("Failed to read file: " + path, e);
             return null;
         }
     }
