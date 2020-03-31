@@ -8,7 +8,7 @@
             class="show_before show_link top"
             v-show="!bof && !empty"
             @click="showBefore"
-        ><s>Display previous logs</s></div>
+        ><s>Display previous lines</s></div>
         <div
             class="contents"
         ></div>
@@ -16,7 +16,7 @@
             class="show_after show_link bottom"
             v-show="!eof && !empty && !searching"
             @click="showAfter"
-        ><s>Display future logs</s></div>
+        ><s>Display next lines</s></div>
         <div
             class="eof xof bottom"
             v-show="eof && !empty"

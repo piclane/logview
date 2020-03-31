@@ -17,6 +17,9 @@ public class Signal {
         return new Signal("file_length", length);
     }
 
+    /** 完全に停止した */
+    public static final Signal STOPPED = new Signal("stopped");
+
     /** メッセージ */
     public final String signal;
 

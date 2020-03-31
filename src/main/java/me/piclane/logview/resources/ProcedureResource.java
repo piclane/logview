@@ -2,6 +2,7 @@ package me.piclane.logview.resources;
 
 import me.piclane.logview.procedure.Param;
 import me.piclane.logview.procedure.Procedure;
+import me.piclane.logview.procedure.Signal;
 import me.piclane.logview.util.Json;
 import me.piclane.logview.util.SessionTasks;
 
@@ -9,6 +10,7 @@ import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.io.Writer;
 
 /**
  * ファイル読み込みプロシージャ
@@ -53,5 +55,4 @@ public class ProcedureResource {
             session.close(new CloseReason(CloseCodes.CANNOT_ACCEPT, e.getMessage()));
         }
     }
-    
 }

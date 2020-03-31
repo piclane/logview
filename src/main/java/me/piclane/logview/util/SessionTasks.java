@@ -1,11 +1,14 @@
 package me.piclane.logview.util;
 
+import me.piclane.logview.procedure.Signal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -19,6 +22,9 @@ import javax.websocket.Session;
  */
 @WebListener
 public class SessionTasks implements ServletContextListener {
+    /** Logger */
+    private static final Logger logger = LoggerFactory.getLogger(SessionTasks.class);
+
     /** 唯一のインスタンス */
     private static volatile SessionTasks instance = null;
 
@@ -46,14 +52,14 @@ public class SessionTasks implements ServletContextListener {
         if(instance == null) {
             throw new IllegalStateException("SessionTasks が開始されていません");
         }
-        instance.cancelImpl(session);
+        instance.cancelImpl(session, SessionTasks::sendStoppedSignal);
     }
 
     /** スレッドキャッシュ */
     private final ExecutorService es = Executors.newCachedThreadPool();
 
-    /** セッションID と {@link Future} のマップ */
-    private final Map<String, Future<?>> futures = new ConcurrentHashMap<>();
+    /** セッションID と {@link TaskRunner} のマップ */
+    private final Map<String, TaskRunner> futures = new ConcurrentHashMap<>();
 
     /**
      * 指定されたセッションに紐付くタスクを開始します
@@ -62,26 +68,92 @@ public class SessionTasks implements ServletContextListener {
      * @param runnable タスク
      */
     private void startImpl(Session session, Runnable runnable) {
-        cancelImpl(session);
-        futures.computeIfAbsent(
-                session.getId(),
-                k -> es.submit(() -> {
-                        runnable.run();
-                        futures.remove(k);
-                        return null;
-                    }));
+        cancelImpl(session, s -> {
+            String id = session.getId();
+            TaskRunner tr = new TaskRunner(id, runnable);
+            tr.future = es.submit(tr);
+            futures.put(id, tr);
+        });
     }
 
     /**
      * 指定されたセッションに紐付いた処理中のタスクを中断します
      *
      * @param session {@link Session}
+     * @param done セッションが完全に終了した後に呼び出されます
      */
-    private void cancelImpl(Session session) {
+    private void cancelImpl(Session session, Consumer<Session> done) {
         String id = session.getId();
-        Future<?> future = futures.remove(id);
-        if(future != null) {
-            future.cancel(true);
+        TaskRunner tr = futures.get(id);
+        if(tr != null) {
+            tr.future.cancel(true);
+            es.submit(() -> {
+                try {
+                    tr.latch.await();
+                } catch (InterruptedException e) {
+                    // nop
+                }
+                done.accept(session);
+            });
+        } else {
+            done.accept(session);
+        }
+    }
+
+    /**
+     * タスクの実行と、実行状態を保持します
+     */
+    private class TaskRunner implements Callable<Void> {
+        /** タスクが完了したらラッチが外れる CountDownLatch */
+        public final CountDownLatch latch = new CountDownLatch(1);
+
+        /** セッションID */
+        public final String sessionId;
+
+        /** タスク */
+        public final Runnable task;
+
+        /** タスクの非同期計算の結果 */
+        public Future<?> future;
+
+        /**
+         * コンストラクタ
+         *
+         * @param sessionId セッションID
+         * @param task タスク
+         */
+        public TaskRunner(String sessionId, Runnable task) {
+            this.sessionId = sessionId;
+            this.task = task;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Void call() {
+            try {
+                task.run();
+            } finally {
+                latch.countDown();
+                futures.remove(sessionId);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 停止シグナルを送出します
+     *
+     * @param session {@link Session}
+     */
+    private static void sendStoppedSignal(Session session) {
+        if(session.isOpen()) {
+            try (Writer writer = session.getBasicRemote().getSendWriter()) {
+                Json.serialize(new Object[]{Signal.STOPPED}, writer);
+            } catch (IOException e) {
+                logger.warn("Failed to send STOPPED signal.", e);
+            }
         }
     }
 

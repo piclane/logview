@@ -149,13 +149,27 @@ export class ProcedureApiClient {
     /**
      * 停止コマンドを送信します
      */
-    public sendStop(): void {
-        this.dispatchEvent('beforeStop');
-        this.wss.getIfOpen().then(ws => {
-            ws.send(JSON.stringify({
-                status: 'stop'
-            }));
-            this.dispatchEvent('afterStop');
+    public sendStop(): Promise<void> {
+        return new Promise<void>(resolve => {
+            const fn = (messages: Message[]) => {
+                if(messages.length !== 1) {
+                    return;
+                }
+                const signal = messages[0];
+                if('signal' in signal && signal.signal === 'stopped') {
+                    this.removeEventListener('message', fn);
+                    resolve();
+                }
+            };
+
+            this.dispatchEvent('beforeStop');
+            this.addEventListener('message', fn);
+            this.wss.getIfOpen().then(ws => {
+                ws.send(JSON.stringify({
+                    status: 'stop'
+                }));
+                this.dispatchEvent('afterStop');
+            });
         });
     }
 

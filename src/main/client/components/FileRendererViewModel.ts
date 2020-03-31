@@ -50,6 +50,9 @@ export default class FileRendererViewModel {
     /** スクロール用のタイマーID */
     private scrollTimerId = -1;
 
+    /** 中断中の場合 true そうでない場合 false */
+    private suspended = false;
+
     /**
      * コンストラクタ
      *
@@ -182,7 +185,7 @@ export default class FileRendererViewModel {
             offsetBytes: pos,
             offsetStart: 'head',
             skipLines: 0,
-            follow: false
+            follow: !this.suspended
         });
     }
 
@@ -203,21 +206,25 @@ export default class FileRendererViewModel {
      * 表示の更新を一時停止します
      */
     public suspend(): void {
+        this.suspended = true;
         this.queue.cancel();
-        this.client.sendStop();
+        this.client.sendStop().then(() => {
+            this.queue.resume();
+        })
     }
 
     /**
      * 表示の更新を再開します
      */
     public resume(): void {
-        this.queue.resume();
         const $lastLine = this.$contents.children('*:last');
         this.client.sendStart({
             offsetStart: 'head',
             offsetBytes: $lastLine.length ? $lastLine.data('pos') + $lastLine.data('len') : 0,
-            skipLines: 0
+            skipLines: 0,
+            follow: true
         });
+        this.suspended = false;
     }
 
     /**
@@ -272,7 +279,7 @@ export default class FileRendererViewModel {
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:first').remove();
                     }
-                    this.scrollToBottom();
+                    this.scrollToBottom(true);
                 } else {
                     this.$contents.prepend($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
@@ -307,8 +314,15 @@ export default class FileRendererViewModel {
 
     /**
      * 末尾にスクロールします
+     *
+     * @param immediate すぐに行う場合 true そうでない場合 false
      */
-    private scrollToBottom(): void {
+    private scrollToBottom(immediate?: boolean): void {
+        if(immediate) {
+            this.$logs.scrollTop(this.$logs.prop('scrollHeight'));
+            return;
+        }
+
         if(this.scrollTimerId < 0) {
             this.scrollTimerId = setTimeout(() => {
                 this.$logs.scrollTop(this.$logs.prop('scrollHeight'));
