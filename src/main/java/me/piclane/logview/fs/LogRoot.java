@@ -29,7 +29,6 @@ public class LogRoot {
     static {
         List<LogRoot> dirs = new LinkedList<>();
 
-        Path root = null;
         try {
             Context initContext = new InitialContext();
             Context envContext = (Context)initContext.lookup("java:/comp/env");
@@ -45,10 +44,11 @@ public class LogRoot {
                 dirs.add(new LogRoot(name, dir));
             }
         } catch (NamingException e) {
-            throw new RuntimeException(e);
+            // nop
         }
         DIRS = Collections.unmodifiableList(dirs);
 
+        Path root = null;
         try {
             Context initContext = new InitialContext();
             Context envContext = (Context)initContext.lookup("java:/comp/env");

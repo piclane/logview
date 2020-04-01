@@ -64,16 +64,14 @@ task buildNpm() {
 }
 
 task buildWeb() {
-    ant.copy(todir: "${buildDir}/web/") {
-        fileset(dir: "${projectDir}/web/")
+    doLast {
+        ant.copy(todir: "${buildDir}/web/") {
+            fileset(dir: "${projectDir}/web/")
+        }
     }
 }
 
 war {
-    exclude '**/WEB-INF/web.xml'
-    webXml = file("${buildDir}/web/WEB-INF/web.xml")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
     def branchName = readBranch()
     switch (branchName) {
         case { isIdea() }:
@@ -89,6 +87,13 @@ war {
             branchName = branchName.tr('\\/:*?"<>|', '＼／：＊？”＜＞｜')
             archiveName = "${project.name}_${project.version}_${branchName}.war"
             break
+    }
+
+    doFirst {
+        exclude '**/WEB-INF/web.xml'
+        webXml = file("${buildDir}/web/WEB-INF/web.xml")
+        webAppDirName = "${buildDir}/web/"
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 
     dependsOn 'buildNpm'
