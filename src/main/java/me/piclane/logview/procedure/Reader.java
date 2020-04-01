@@ -1,5 +1,6 @@
 package me.piclane.logview.procedure;
 
+import me.piclane.logview.procedure.text.Direction;
 import me.piclane.logview.procedure.text.Line;
 import me.piclane.logview.procedure.text.LineReader;
 import me.piclane.logview.procedure.text.Offset;
@@ -87,9 +88,13 @@ class Reader implements Runnable {
             }
 
             // 最終行まで検索が終了したことを伝える
-            if(reader.getCurrentOffset().isEof()) {
+            if(param.getDirection() == Direction.forward && !reader.hasNextLine()) {
                 try (Writer writer = session.getBasicRemote().getSendWriter()) {
                     Json.serialize(new Object[]{Signal.EOF}, writer);
+                }
+            } else if(param.getDirection() == Direction.backward && !reader.hasNextLine()) {
+                try (Writer writer = session.getBasicRemote().getSendWriter()) {
+                    Json.serialize(new Object[]{Signal.BOF}, writer);
                 }
             } else {
                 return; // 最終行まで読み込んでいない場合は続きを監視しない

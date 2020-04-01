@@ -23,14 +23,32 @@ interface ComponentData {
 }
 
 /**
+ * 開始モード
+ */
+interface StartMode {
+    /**
+     * スクロールモード
+     * - bottom
+     *   常にスクロールを下部に固定します
+     * - keep
+     *   表示が動かないように見えるようにスクロールを調節します
+     */
+    scroll: 'bottom' | 'keep';
+}
+
+/**
  * FileRenderer の表示モデル
  */
 export default class FileRendererViewModel {
     /** 表示される最大行数 */
     private static readonly bufferLines =
-        process.env.NODE_ENV === 'development' ? 100 : 2000;
+        process.env.NODE_ENV === 'development' ? 300 : 2000;
 
-    private readonly client: ProcedureApiClient;
+    /** 1行の高さ */
+    private static readonly lineHeight = 16;
+
+    /** ProcedureApi クライアント */
+    private readonly client: ProcedureApiClient<StartMode>;
 
     /** タスクキュー */
     private readonly queue = new Queue();
@@ -63,9 +81,9 @@ export default class FileRendererViewModel {
         this.client.addEventListener('close', e => {
             this.onClose(e);
         });
-        this.client.addEventListener('message', messages => {
+        this.client.addEventListener('message', (messages, startMode) => {
             this.queue.put(() => {
-                this.receiveMessage(messages);
+                this.receiveMessage(messages, startMode);
             });
         });
         this.client.addEventListener('beforeStart', () => {
@@ -92,8 +110,7 @@ export default class FileRendererViewModel {
      * @param options 開始パラメーター
      */
     public openHead(path: Path, options?: Partial<StartParam>): void {
-        this.client.sendStop();
-        this.client.sendStart(Object.assign({
+        this.client.sendStopAndStart(Object.assign({
             path: path,
             procedure: 'read',
             lines: FileRendererViewModel.bufferLines,
@@ -102,7 +119,9 @@ export default class FileRendererViewModel {
             offsetBytes: 0,
             skipLines: 0,
             follow: true
-        }, options));
+        }, options), {
+            scroll: "bottom"
+        });
     }
 
     /**
@@ -112,8 +131,7 @@ export default class FileRendererViewModel {
      * @param options 開始パラメーター
      */
     public openTail(path: Path, options?: Partial<StartParam>): void {
-        this.client.sendStop();
-        this.client.sendStart(Object.assign({
+        this.client.sendStopAndStart(Object.assign({
             path: path,
             procedure: 'read',
             lines: FileRendererViewModel.bufferLines,
@@ -122,7 +140,9 @@ export default class FileRendererViewModel {
             offsetBytes: 0,
             skipLines: -FileRendererViewModel.bufferLines,
             follow: true
-        }, options));
+        }, options), {
+            scroll: "bottom"
+        });
     }
 
     /**
@@ -134,8 +154,7 @@ export default class FileRendererViewModel {
      */
     public search(path: Path, query: string[], smart: boolean): void {
         this.data.searching = true;
-        this.client.sendStop();
-        this.client.sendStart({
+        this.client.sendStopAndStart({
             path: path,
             procedure: smart ? 'searchSmart' : 'search',
             lines: FileRendererViewModel.bufferLines,
@@ -145,6 +164,8 @@ export default class FileRendererViewModel {
             skipLines: 0,
             follow: true,
             search: query
+        }, {
+            scroll: "bottom"
         });
     }
 
@@ -157,14 +178,15 @@ export default class FileRendererViewModel {
         }
 
         const pos = this.$contents.children('*:first').data('pos');
-        this.client.sendStop();
-        this.client.sendStart({
+        this.client.sendStopAndStart({
             lines: FileRendererViewModel.bufferLines / 2,
             direction: 'backward',
             offsetBytes: pos,
             offsetStart: 'head',
             skipLines: 0,
             follow: false
+        }, {
+            scroll: "keep"
         });
     }
 
@@ -178,14 +200,15 @@ export default class FileRendererViewModel {
 
         const $last = this.$contents.children('*:last');
         const pos = $last.data('pos') + $last.data('len');
-        this.client.sendStop();
-        this.client.sendStart({
+        this.client.sendStopAndStart({
             lines: FileRendererViewModel.bufferLines / 2,
             direction: 'forward',
             offsetBytes: pos,
             offsetStart: 'head',
             skipLines: 0,
             follow: !this.suspended
+        }, {
+            scroll: "keep"
         });
     }
 
@@ -255,8 +278,9 @@ export default class FileRendererViewModel {
      * メッセージを処理します
      *
      * @param messages メッセージの配列
+     * @param startMode 開始モード
      */
-    protected receiveMessage(messages: Message[]): void {
+    protected receiveMessage(messages: Message[], startMode: StartMode): void {
         let childCount = this.$contents.children().length;
         for(let message of messages) {
             if('signal' in message) {
@@ -273,17 +297,31 @@ export default class FileRendererViewModel {
                         len: line.len
                     });
 
+                let scrollTop = this.$logs.prop('scrollTop');
                 childCount++;
                 if (this.client.lastDirection === 'forward') {
                     this.$contents.append($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:first').remove();
+                        childCount--;
+                        if(startMode.scroll === 'keep') {
+                            this.$logs.scrollTop(scrollTop - FileRendererViewModel.lineHeight);
+                        }
                     }
-                    this.scrollToBottom(true);
+                    if(startMode.scroll === 'bottom') {
+                        this.scrollToBottom(true);
+                    }
                 } else {
                     this.$contents.prepend($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:last').remove();
+                        childCount--;
+                        if(startMode.scroll === 'keep') {
+                            this.$logs.scrollTop(scrollTop + FileRendererViewModel.lineHeight);
+                        }
+                    }
+                    if(startMode.scroll === 'bottom') {
+                        this.scrollToBottom(true);
                     }
                 }
             }

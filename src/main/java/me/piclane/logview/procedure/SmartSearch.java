@@ -132,9 +132,13 @@ class SmartSearch implements Runnable {
             flushBuffer(true, true);
 
             // 最終行まで検索が終了したことを伝える
-            if(reader.getCurrentOffset().isEof()) {
+            if(param.getDirection() == Direction.forward && !reader.hasNextLine()) {
                 try (Writer writer = session.getBasicRemote().getSendWriter()) {
                     Json.serialize(new Object[]{Signal.EOF}, writer);
+                }
+            } else if(param.getDirection() == Direction.backward && !reader.hasNextLine()) {
+                try (Writer writer = session.getBasicRemote().getSendWriter()) {
+                    Json.serialize(new Object[]{Signal.BOF}, writer);
                 }
             } else {
                 return; // 最終行まで読み込んでいない場合は続きを監視しない
@@ -225,7 +229,7 @@ class SmartSearch implements Runnable {
      */
     private void flushBuffer(boolean force, boolean eof) throws IOException {
         long now = System.currentTimeMillis();
-        if(force || now - lastFlushMillis > 200L) {
+        if(force || now - lastFlushMillis > 200L || lineBuffer.size() > 100) {
             if(!lineBuffer.isEmpty()) {
                 try(Writer writer = session.getBasicRemote().getSendWriter()) {
                     Object[] buf;

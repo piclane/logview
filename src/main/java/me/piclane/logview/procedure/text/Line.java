@@ -90,8 +90,10 @@ public class Line {
                         return reader.position();
                     case '\r':
                         long cur = reader.position();
-                        if ((reader.read()) != '\n') {
+                        if (reader.read() != '\n') {
                             reader.position(cur);
+                        } else {
+                            cur++;
                         }
                         return cur;
                     default:

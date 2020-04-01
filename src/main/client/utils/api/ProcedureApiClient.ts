@@ -99,20 +99,22 @@ export type Message = Line | Signal;
 /**
  * イベント名称とイベント型
  */
-interface ProcedureApiClientMap {
-    "close": CloseEvent;
-    "error": Event;
-    "message": Message[];
-    "beforeStop": never;
-    "afterStop": never;
-    "beforeStart": never;
-    "afterStart": never;
+interface ProcedureApiClientMap<T> {
+    "close": [CloseEvent, never];
+    "error": [Event, never];
+    "message": [Message[], T];
+    "beforeStop": [never, never];
+    "afterStop": [never, never];
+    "beforeStart": [never, never];
+    "afterStart": [never, never];
 }
 
 /**
  * ProcedureApiClient
+ *
+ * @param <T> 読込開始時の開始ユーザーオプションの型
  */
-export class ProcedureApiClient {
+export class ProcedureApiClient<T extends {}> {
     /** WebSocketSource */
     private readonly wss: WebSocketSource;
 
@@ -121,6 +123,9 @@ export class ProcedureApiClient {
 
     /** 読込開始時の開始パラメーター */
     private lastStartParam: StartParam = {} as StartParam;
+
+    /** 読込開始時の開始ユーザーオプション */
+    private lastStartOpioon: T = {} as T;
 
     /**
      * コンストラクタ
@@ -131,7 +136,7 @@ export class ProcedureApiClient {
                 this.dispatchEvent('close', e);
             });
             ws.addEventListener('message', e => {
-                this.dispatchEvent('message', JSON.parse(e.data) as Message[]);
+                this.dispatchEvent('message', JSON.parse(e.data) as Message[], this.lastStartOpioon);
             });
         });
     }
@@ -143,6 +148,8 @@ export class ProcedureApiClient {
         this.wss.getIfOpen().then(ws => {
             ws.send(JSON.stringify({status: 'stop'}));
             ws.close();
+        }, () => {
+            return;
         });
     }
 
@@ -169,6 +176,9 @@ export class ProcedureApiClient {
                     status: 'stop'
                 }));
                 this.dispatchEvent('afterStop');
+            }, () => {
+                this.removeEventListener('message', fn);
+                resolve();
             });
         });
     }
@@ -177,11 +187,14 @@ export class ProcedureApiClient {
      * 開始コマンドを送信します
      *
      * @param param 開始パラメーター
+     * @param options ユーザーオプション
      */
-    public sendStart(param: Partial<StartParam>): void {
+    public sendStart(param: Partial<StartParam>, options?: T): void {
         this.dispatchEvent('beforeStart');
 
-        const p = this.lastStartParam = Object.assign({}, this.lastStartParam, param);
+        this.lastStartOpioon = Object.assign({}, this.lastStartOpioon, options);
+        this.lastStartParam = Object.assign({}, this.lastStartParam, param);
+        const p = this.lastStartParam;
         this.wss.get().then(ws => {
             ws.send(JSON.stringify({
                 status: 'start',
@@ -200,6 +213,18 @@ export class ProcedureApiClient {
     }
 
     /**
+     * 停止後に開始コマンドを送信します
+     *
+     * @param param 開始パラメーター
+     * @param options ユーザーオプション
+     */
+    public sendStopAndStart(param: Partial<StartParam>, options?: T): void {
+        this.sendStop().then(() => {
+            this.sendStart(param, options);
+        });
+    }
+
+    /**
      * 最後に指定された走査方向
      */
     public get lastDirection(): Direction {
@@ -212,7 +237,7 @@ export class ProcedureApiClient {
      * @param type イベント名
      * @param listener イベントリスナー
      */
-    public addEventListener<K extends keyof ProcedureApiClientMap>(type: K, listener: (this: ProcedureApiClient, ev: ProcedureApiClientMap[K]) => any): void {
+    public addEventListener<K extends keyof ProcedureApiClientMap<T>>(type: K, listener: (this: ProcedureApiClient<T>, e: ProcedureApiClientMap<T>[K][0], p: ProcedureApiClientMap<T>[K][1]) => any): void {
         this.emitter.addListener(type, listener, this);
     }
 
@@ -222,7 +247,7 @@ export class ProcedureApiClient {
      * @param type イベント名
      * @param listener イベントリスナー
      */
-    public removeEventListener<K extends keyof ProcedureApiClientMap>(type: K, listener: (this: ProcedureApiClient, ev: ProcedureApiClientMap[K]) => any): void {
+    public removeEventListener<K extends keyof ProcedureApiClientMap<T>>(type: K, listener: (this: ProcedureApiClient<T>, e: ProcedureApiClientMap<T>[K][0], p: ProcedureApiClientMap<T>[K][1]) => any): void {
         this.emitter.removeListener(type, listener, this);
     }
 

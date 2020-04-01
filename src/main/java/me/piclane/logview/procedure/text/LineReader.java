@@ -80,6 +80,22 @@ public class LineReader implements AutoCloseable {
     }
 
     /**
+     * {@link #readLine()} で次の行が取得できるかどうかを取得します
+     *
+     * @return {@link #readLine()} で次の行が取得できる場合 true そうでない場合 false
+     */
+    public boolean hasNextLine() {
+        if(!lines.isEmpty()) {
+            return true;
+        }
+        if(direction == Direction.forward) {
+            return !offset.isEof();
+        } else {
+            return !offset.isBof();
+        }
+    }
+
+    /**
      * 一行読み込みます
      *
      * @return 読み込んだ行
@@ -139,7 +155,7 @@ public class LineReader implements AutoCloseable {
             while((last = buf.pollLast()) != null) {
                 lines.addFirst(last);
             }
-        } while(lines.size() < lineBufferSize);
+        } while(lines.size() < lineBufferSize && start > 0);
 
         Line first = lines.getFirst();
         if(first != null) {

@@ -59,16 +59,16 @@ export class WebSocketSource {
 
     /**
      * WebSocket が接続済みの時のみ resolve される Promise を取得します
+     * WebSocket が接続されていない場合は reject されます
      */
     public getIfOpen(): Promise<WebSocket> {
-        if (this.ws !== null &&
-            this.ws.readyState === WebSocket.OPEN) {
-            const ws = this.ws as WebSocket;
-            return new Promise<WebSocket>(resolve => {
-                resolve(ws);
-            });
-        } else {
-            return new Promise<WebSocket>(() => {});  // eslint-disable-line
-        }
+        return new Promise<WebSocket>((resolve, reject) => {
+            if (this.ws !== null &&
+                this.ws.readyState === WebSocket.OPEN) {
+                resolve(this.ws as WebSocket);
+            } else {
+                reject();
+            }
+        });
     }
 }
