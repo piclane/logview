@@ -2,17 +2,13 @@ package me.piclane.logview.util;
 
 import org.junit.Test;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.junit.Assume.*;
+import static org.junit.Assume.assumeThat;
 
 public class EnvironmentTest {
     @Test
