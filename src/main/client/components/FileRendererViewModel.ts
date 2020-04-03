@@ -2,7 +2,7 @@ import Queue from "@/utils/Queue";
 import $ from "jquery";
 import Path from "@/utils/Path";
 import {Vue} from "vue/types/vue";
-import {Line, Message, ProcedureApiClient, Signal, StartParam} from "@/utils/api/ProcedureApiClient";
+import {Direction, Line, Message, ProcedureApiClient, Signal, StartParam} from "@/utils/api/ProcedureApiClient";
 
 
 /**
@@ -64,9 +64,6 @@ export default class FileRendererViewModel {
 
     /** 表示されている行数 */
     private currentlineCount = 0;
-
-    /** スクロール用のタイマーID */
-    private scrollTimerId = -1;
 
     /** 中断中の場合 true そうでない場合 false */
     private suspended = false;
@@ -298,31 +295,31 @@ export default class FileRendererViewModel {
                     });
 
                 let scrollTop = this.$logs.prop('scrollTop');
+                let scrollDy = FileRendererViewModel.lineHeight;
                 childCount++;
                 if (this.client.lastDirection === 'forward') {
+                    scrollDy = -scrollDy;
                     this.$contents.append($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:first').remove();
                         childCount--;
-                        if(startMode.scroll === 'keep') {
-                            this.$logs.scrollTop(scrollTop - FileRendererViewModel.lineHeight);
-                        }
-                    }
-                    if(startMode.scroll === 'bottom') {
-                        this.scrollToBottom(true);
                     }
                 } else {
                     this.$contents.prepend($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:last').remove();
                         childCount--;
-                        if(startMode.scroll === 'keep') {
-                            this.$logs.scrollTop(scrollTop + FileRendererViewModel.lineHeight);
-                        }
                     }
-                    if(startMode.scroll === 'bottom') {
-                        this.scrollToBottom(true);
-                    }
+                }
+
+                // 適切な位置にスクロールする
+                switch (startMode.scroll) {
+                    case "keep":
+                        this.$logs.scrollTop(scrollTop + scrollDy);
+                        break;
+                    case "bottom":
+                        this.$logs.scrollTop(this.$logs.prop('scrollHeight'));
+                        break;
                 }
             }
         }
@@ -347,25 +344,6 @@ export default class FileRendererViewModel {
                 this.data.eof = true;
                 this.data.searching = false;
                 break;
-        }
-    }
-
-    /**
-     * 末尾にスクロールします
-     *
-     * @param immediate すぐに行う場合 true そうでない場合 false
-     */
-    private scrollToBottom(immediate?: boolean): void {
-        if(immediate) {
-            this.$logs.scrollTop(this.$logs.prop('scrollHeight'));
-            return;
-        }
-
-        if(this.scrollTimerId < 0) {
-            this.scrollTimerId = setTimeout(() => {
-                this.$logs.scrollTop(this.$logs.prop('scrollHeight'));
-                this.scrollTimerId = -1;
-            }, 10);
         }
     }
 }

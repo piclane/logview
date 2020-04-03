@@ -4,13 +4,13 @@ import EventEmitter from "eventemitter3";
 
 
 /** プロシージャ型 */
-type Procedure = 'read' | 'search' | 'searchSmart';
+export type Procedure = 'read' | 'search' | 'searchSmart';
 
 /** 行の読込方向型 */
-type Direction = 'forward' | 'backward';
+export type Direction = 'forward' | 'backward';
 
 /** 読込の開始位置型 */
-type OffsetStart = 'head' | 'tail';
+export type OffsetStart = 'head' | 'tail';
 
 /**
  * 読込開始用のパラメーター
