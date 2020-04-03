@@ -3,7 +3,6 @@ package me.piclane.logview.procedure.text;
 import me.piclane.logview.procedure.Param;
 
 import java.io.IOException;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Deque;
 import java.util.LinkedList;
@@ -18,8 +17,8 @@ public class LineReader implements AutoCloseable {
     /** 行バッファのサイズ */
     private final int lineBufferSize;
 
-    /** {@link SeekableByteChannel} */
-    private final SeekableByteChannel channel;
+    /** {@link BufferedByteReader} */
+    private final BufferedByteReader reader;
 
     /** 文字セット */
     private final Charset charset;
@@ -33,32 +32,32 @@ public class LineReader implements AutoCloseable {
     /**
      * コンストラクタ
      *
-     * @param channel {@link SeekableByteChannel}
+     * @param reader {@link BufferedByteReader}
      * @param param Param
      * @throws IOException 入出力例外が発生した場合
      */
-    public LineReader(SeekableByteChannel channel, Param param) throws IOException {
+    public LineReader(BufferedByteReader reader, Param param) throws IOException {
         this(
-            channel,
+            reader,
             param.getDirection(),
-            Offset.of(channel, param.getOffsetBytes(), param.getOffsetStart(), param.getSkipLines()),
+            Offset.of(reader, param.getOffsetBytes(), param.getOffsetStart(), param.getSkipLines()),
             param.getLines());
     }
 
     /**
      * コンストラクタ
      *
-     * @param channel {@link SeekableByteChannel}
+     * @param reader {@link BufferedByteReader}
      * @param direction 走査方向
      * @param offset オフセット
      * @param lineBufferSize 行バッファのサイズ
      */
-    public LineReader(SeekableByteChannel channel, Direction direction, Offset offset, int lineBufferSize) {
-        this.channel = channel;
+    public LineReader(BufferedByteReader reader, Direction direction, Offset offset, int lineBufferSize) {
+        this.reader = reader;
         this.direction = direction;
         this.offset = offset;
         this.lineBufferSize = lineBufferSize;
-        this.charset = CharsetDetector.detect(channel);
+        this.charset = CharsetDetector.detect(reader);
     }
 
     /**
@@ -76,7 +75,7 @@ public class LineReader implements AutoCloseable {
      * @throws IOException 入出力例外が発生した場合
      */
     public void refresh() throws IOException {
-        offset = offset.withLength(channel);
+        offset = offset.withLength(reader);
     }
 
     /**
@@ -121,13 +120,13 @@ public class LineReader implements AutoCloseable {
      * @throws IOException 入出力例外が発生した場合
      */
     private void readForward() throws IOException {
-        channel.position(offset.position);
-        Line.readLine(channel, charset, line -> {
+        reader.position(offset.position);
+        Line.readLine(reader, charset, line -> {
             lines.addLast(line);
             return lines.size() < lineBufferSize;
         });
         Line last = lines.getLast();
-        if(last != null) {
+        if (last != null) {
             offset = offset.withPosition(last.pos + last.len);
         }
     }
@@ -143,10 +142,10 @@ public class LineReader implements AutoCloseable {
         Deque<Line> buf = new LinkedList<>();
         Line last;
         do {
-            channel.position(start);
-            long _start = start == 0 ? start : Line.skipLine(channel);
+            reader.position(start);
+            long _start = start == 0 ? start : Line.skipLine(reader);
             long _end = end;
-            Line.readLine(channel, charset, line -> {
+            Line.readLine(reader, charset, line -> {
                 buf.addLast(line);
                 return line.pos + line.len < _end;
             });
@@ -168,6 +167,6 @@ public class LineReader implements AutoCloseable {
      */
     @Override
     public void close() throws IOException {
-        channel.close();
+        reader.close();
     }
 }

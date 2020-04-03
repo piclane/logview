@@ -4,11 +4,7 @@ import org.mozilla.intl.chardet.nsDetector;
 import org.mozilla.intl.chardet.nsPSMDetector;
 import org.mozilla.universalchardet.UniversalDetector;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -32,43 +28,41 @@ public class CharsetDetector {
      * @throws IOException 入出力例外が発生した場合
      */
     public static Charset detect(Path path) throws IOException {
-        try(SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
-            return detect(channel);
+        try(BufferedByteReader reader = new BufferedByteReader(Files.newByteChannel(path, StandardOpenOption.READ))) {
+            return detect(reader);
         }
     }
 
     /**
      * 文字セットを検出します
      *
-     * @param channel {@link SeekableByteChannel}
+     * @param reader {@link BufferedByteReader}
      * @return 検出された文字セット
      */
-    public static Charset detect(SeekableByteChannel channel) {
+    public static Charset detect(BufferedByteReader reader) {
         Charset charset = StandardCharsets.UTF_8;
         try {
             UniversalDetector uDet = new UniversalDetector(null);
             nsDetector nDet = new nsDetector(nsPSMDetector.JAPANESE);
-            ByteBuffer buf = ByteBuffer.allocate(4096);
+            byte[] buf = new byte[4096];
             int n;
             boolean isAscii = true, uDone = false, nDone = false;
             long timeout = System.currentTimeMillis() + CHARSET_DETECT_TIMEOUT_MILLIS;
-            channel.position(0);
-            while((n = channel.read(buf)) > 0 && !nDone && !uDone && System.currentTimeMillis() < timeout) {
-                byte[] array = buf.array();
+            reader.position(0);
+            while((n = reader.read(buf)) > 0 && !nDone && !uDone && System.currentTimeMillis() < timeout) {
                 if(isAscii) {
-                    isAscii = nDet.isAscii(array, n);
+                    isAscii = nDet.isAscii(buf, n);
                 }
 
                 if(!isAscii) {
                     if(!nDone) {
-                        nDone = nDet.DoIt(array, n, false);
+                        nDone = nDet.DoIt(buf, n, false);
                     }
                     if(!uDone) {
-                        uDet.handleData(array, 0, n);
+                        uDet.handleData(buf, 0, n);
                         uDone = uDet.isDone();
                     }
                 }
-                buf.clear();
             }
             nDet.DataEnd();
             uDet.dataEnd();

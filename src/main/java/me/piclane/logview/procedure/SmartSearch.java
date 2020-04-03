@@ -1,15 +1,11 @@
 package me.piclane.logview.procedure;
 
-import me.piclane.logview.procedure.text.Direction;
-import me.piclane.logview.procedure.text.Line;
-import me.piclane.logview.procedure.text.LineReader;
-import me.piclane.logview.procedure.text.Offset;
+import me.piclane.logview.procedure.text.*;
 import me.piclane.logview.util.Json;
 
 import javax.websocket.Session;
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -71,7 +67,7 @@ class SmartSearch implements Runnable {
         String oldName = currentThread.getName();
         currentThread.setName(getClass().getSimpleName() + "-" + path.getFileName());
 
-        try(LineReader reader = new LineReader(Files.newByteChannel(path), param)) {
+        try(LineReader reader = new LineReader(new BufferedByteReader(path), param)) {
             // ファイル長を送信
             try(Writer writer = session.getBasicRemote().getSendWriter()) {
                 List<Object> signal = new ArrayList<>();

@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class Offset {
     /** ブロックサイズ */
-    private static final long BLOCK_SIZE = ByteReader.DEFAULT_BUFFER_SIZE;
+    private static final long BLOCK_SIZE = BufferedByteReader.DEFAULT_BUFFER_SIZE;
 
     /** ファイル長 */
     public final long length;
@@ -21,7 +21,7 @@ public class Offset {
     /**
      * Offset のインスタンスを生成します
      *
-     * @param channel {@link SeekableByteChannel}
+     * @param reader {@link BufferedByteReader}
      * @param offsetBytes 始点からの位置 (Byte)
      * @param offsetStart オフセットの開始位置
      * @param skipLines オフセット位置からスキップする行数
@@ -31,8 +31,8 @@ public class Offset {
      * @return 新しい Offset のインスタンス
      * @throws IOException 入出力例外が発生した場合
      */
-    public static Offset of(SeekableByteChannel channel, long offsetBytes, OffsetStart offsetStart, int skipLines) throws IOException {
-        long length = channel.size();
+    public static Offset of(BufferedByteReader reader, long offsetBytes, OffsetStart offsetStart, int skipLines) throws IOException {
+        long length = reader.size();
         long position;
         if(offsetStart == OffsetStart.head) {
             position = Math.min(offsetBytes, length);
@@ -40,9 +40,9 @@ public class Offset {
             position = Math.max(0, length - offsetBytes);
         }
         if(skipLines > 0) {
-            channel.position(position);
-            for(int i=0; i<skipLines && position < length; i++) {
-                position = Line.skipLine(channel);
+            reader.position(position);
+            for (int i = 0; i < skipLines && position < length; i++) {
+                position = Line.skipLine(reader);
             }
             return new Offset(length, position);
         } else if(skipLines < 0) {
@@ -50,27 +50,27 @@ public class Offset {
             int currentTailLineCount = 0;
             long posBlockStart = Math.max(0, position - BLOCK_SIZE);
             long posBlockEnd = position;
+            List<Long> positions = new ArrayList<>();
             do {
                 // ブロックの先頭行に頭出し
-                channel.position(posBlockStart);
+                reader.position(posBlockStart);
 
                 // ブロックの中の各行を読み取り
-                List<Long> positions = new ArrayList<>();
                 long currentPos;
+                positions.clear();
                 do {
-                    positions.add(currentPos = Line.skipLine(channel));
+                    positions.add(currentPos = Line.skipLine(reader));
                 } while (currentPos < posBlockEnd);
 
                 // 指定された行の開始位置を返して終了
-                if(currentTailLineCount + positions.size() >= skipLines) {
+                if (currentTailLineCount + positions.size() >= skipLines) {
                     return new Offset(length, positions.get(positions.size() - skipLines + currentTailLineCount - 1));
                 }
 
                 currentTailLineCount += positions.size();
                 posBlockEnd = posBlockStart - 1;
                 posBlockStart = Math.max(0, posBlockEnd - BLOCK_SIZE);
-            } while(posBlockStart > 0);
-
+            } while (posBlockStart > 0);
             return new Offset(length, 0);
         } else {
             return new Offset(length, position);
@@ -112,6 +112,17 @@ public class Offset {
      */
     public Offset withLength(SeekableByteChannel channel) throws IOException {
         return new Offset(channel.size(), position);
+    }
+
+    /**
+     * 最新のファイル長を指定して Offset の新しいインスタンスを生成します
+     *
+     * @param reader {@link BufferedByteReader}
+     * @return Offset の新しいインスタンス
+     * @throws IOException 入出力例外が発生した場合
+     */
+    public Offset withLength(BufferedByteReader reader) throws IOException {
+        return new Offset(reader.size(), position);
     }
 
     /**
