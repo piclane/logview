@@ -18,7 +18,7 @@ import java.nio.file.Path;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-public class ByteReaderTest {
+public class BufferedByteReaderTest {
     /** Test FileSystem */
     private FileSystem testFs;
 

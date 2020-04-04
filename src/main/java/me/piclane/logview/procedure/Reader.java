@@ -45,7 +45,7 @@ class Reader implements Runnable {
         int lineCountMax = 100;
         Line[] lines = new Line[lineCountMax];
 
-        try(LineReader reader = new LineReader(new BufferedByteReader(path), param)) {
+        try(LineReader reader = LineReader.of(param)) {
             // ファイル長を送信
             try(Writer writer = session.getBasicRemote().getSendWriter()) {
                 List<Object> signal = new ArrayList<>();

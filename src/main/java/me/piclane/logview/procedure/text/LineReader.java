@@ -30,14 +30,14 @@ public class LineReader implements AutoCloseable {
     private Offset offset;
 
     /**
-     * コンストラクタ
+     * {@link Param} から {@link LineReader} を生成します
      *
-     * @param reader {@link BufferedByteReader}
      * @param param Param
      * @throws IOException 入出力例外が発生した場合
      */
-    public LineReader(BufferedByteReader reader, Param param) throws IOException {
-        this(
+    public static LineReader of(Param param) throws IOException {
+        BufferedByteReader reader = new BufferedByteReader(param.getPath());
+        return new LineReader(
             reader,
             param.getDirection(),
             Offset.of(reader, param.getOffsetBytes(), param.getOffsetStart(), param.getSkipLines()),
@@ -82,16 +82,19 @@ public class LineReader implements AutoCloseable {
      * {@link #readLine()} で次の行が取得できるかどうかを取得します
      *
      * @return {@link #readLine()} で次の行が取得できる場合 true そうでない場合 false
+     * @throws IOException 入出力例外が発生した場合
      */
-    public boolean hasNextLine() {
-        if(!lines.isEmpty()) {
-            return true;
-        }
+    public boolean hasNextLine() throws IOException {
         if(direction == Direction.forward) {
-            return !offset.isEof();
+            if(!offset.isEof() && lines.isEmpty()) {
+                readForward();
+            }
         } else {
-            return !offset.isBof();
+            if(!offset.isBof() && lines.isEmpty()) {
+                readBackward();
+            }
         }
+        return !lines.isEmpty();
     }
 
     /**
@@ -102,12 +105,12 @@ public class LineReader implements AutoCloseable {
      */
     public Line readLine() throws IOException {
         if(direction == Direction.forward) {
-            if(!offset.isEof()) {
+            if(!offset.isEof() && lines.isEmpty()) {
                 readForward();
             }
             return lines.pollFirst();
         } else {
-            if(!offset.isBof()) {
+            if(!offset.isBof() && lines.isEmpty()) {
                 readBackward();
             }
             return lines.pollLast();

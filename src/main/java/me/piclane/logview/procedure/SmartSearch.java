@@ -67,7 +67,7 @@ class SmartSearch implements Runnable {
         String oldName = currentThread.getName();
         currentThread.setName(getClass().getSimpleName() + "-" + path.getFileName());
 
-        try(LineReader reader = new LineReader(new BufferedByteReader(path), param)) {
+        try(LineReader reader = LineReader.of(param)) {
             // ファイル長を送信
             try(Writer writer = session.getBasicRemote().getSendWriter()) {
                 List<Object> signal = new ArrayList<>();

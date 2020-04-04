@@ -40,7 +40,6 @@ public class CharsetDetector {
      * @return 検出された文字セット
      */
     public static Charset detect(BufferedByteReader reader) {
-        Charset charset = StandardCharsets.UTF_8;
         try {
             UniversalDetector uDet = new UniversalDetector(null);
             nsDetector nDet = new nsDetector(nsPSMDetector.JAPANESE);
@@ -49,7 +48,7 @@ public class CharsetDetector {
             boolean isAscii = true, uDone = false, nDone = false;
             long timeout = System.currentTimeMillis() + CHARSET_DETECT_TIMEOUT_MILLIS;
             reader.position(0);
-            while((n = reader.read(buf)) > 0 && !nDone && !uDone && System.currentTimeMillis() < timeout) {
+            while((n = reader.read(buf)) > 0 && !(nDone && uDone) && System.currentTimeMillis() < timeout) {
                 if(isAscii) {
                     isAscii = nDet.isAscii(buf, n);
                 }
@@ -68,32 +67,30 @@ public class CharsetDetector {
             uDet.dataEnd();
 
             if(isAscii) {
-                throw new Exception("fallback");
+                return StandardCharsets.UTF_8;
             }
 
             List<String> nDetected = Arrays.asList(nDet.getProbableCharsets());
             String uDetected = uDet.getDetectedCharset();
             if("nomatch".equals(nDetected.get(0))) {
                 if(uDetected != null) {
-                    charset = Charset.forName(uDetected);
+                    return Charset.forName(uDetected);
                 }
-                throw new Exception("fallback");
             }
 
             if(uDetected != null && nDetected.contains(uDetected)) {
-                charset = Charset.forName(uDetected); // 二人の意見が一致
+                return Charset.forName(uDetected); // 二人の意見が一致
             } else if(nDetected.contains("Shift_JIS")) {
-                charset = CHARSET_MS932;
+                return CHARSET_MS932;
             } else if(nDetected.contains("UTF-8")) {
-                charset = StandardCharsets.UTF_8;
+                return StandardCharsets.UTF_8;
             } else if(nDetected.contains("UTF-16LE")) {
-                charset = StandardCharsets.UTF_16LE;
+                return StandardCharsets.UTF_16LE;
             } else {
-                charset = Charset.forName(nDetected.get(0));
+                return Charset.forName(nDetected.get(0));
             }
         } catch(Exception e) {
-            // fall back to utf8
+            return StandardCharsets.UTF_8;
         }
-        return charset;
     }
 }

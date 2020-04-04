@@ -14,8 +14,10 @@ public class BufferedByteReader implements AutoCloseable {
     /** デフォルトバッファサイズ */
     public static final int DEFAULT_BUFFER_SIZE = 4096;
 
-    public static final int UNDEFINED_BUFFER_SIZE = Integer.MIN_VALUE;
+    /** バッファサイズが未定 */
+    private static final int UNDEFINED_BUFFER_SIZE = Integer.MIN_VALUE;
 
+    /** 位置が未定 */
     private static final long UNDEFINED_POSITION = Long.MIN_VALUE;
 
     /** {@link SeekableByteChannel} */
