@@ -112,9 +112,9 @@ interface ProcedureApiClientMap<T> {
 /**
  * ProcedureApiClient
  *
- * @param <T> 読込開始時の開始ユーザーオプションの型
+ * @param <T> 読込開始時の開始モードの型
  */
-export class ProcedureApiClient<T extends {}> {
+export class ProcedureApiClient<MODE extends {}> {
     /** WebSocketSource */
     private readonly wss: WebSocketSource;
 
@@ -124,8 +124,8 @@ export class ProcedureApiClient<T extends {}> {
     /** 読込開始時の開始パラメーター */
     private lastStartParam: StartParam = {} as StartParam;
 
-    /** 読込開始時の開始ユーザーオプション */
-    private lastStartOpioon: T = {} as T;
+    /** 読込開始時の開始モード */
+    private lastStartMode: MODE = {} as MODE;
 
     /**
      * コンストラクタ
@@ -136,7 +136,7 @@ export class ProcedureApiClient<T extends {}> {
                 this.dispatchEvent('close', e);
             });
             ws.addEventListener('message', e => {
-                this.dispatchEvent('message', JSON.parse(e.data) as Message[], this.lastStartOpioon);
+                this.dispatchEvent('message', JSON.parse(e.data) as Message[], this.lastStartMode);
             });
         });
     }
@@ -189,10 +189,10 @@ export class ProcedureApiClient<T extends {}> {
      * @param param 開始パラメーター
      * @param options ユーザーオプション
      */
-    public sendStart(param: Partial<StartParam>, options?: T): void {
+    public sendStart(param: Partial<StartParam>, options: MODE): void {
         this.dispatchEvent('beforeStart');
 
-        this.lastStartOpioon = Object.assign({}, this.lastStartOpioon, options);
+        this.lastStartMode = options;
         this.lastStartParam = Object.assign({}, this.lastStartParam, param);
         const p = this.lastStartParam;
         this.wss.get().then(ws => {
@@ -218,17 +218,56 @@ export class ProcedureApiClient<T extends {}> {
      * @param param 開始パラメーター
      * @param options ユーザーオプション
      */
-    public sendStopAndStart(param: Partial<StartParam>, options?: T): void {
+    public sendStopAndStart(param: Partial<StartParam>, options: MODE): void {
         this.sendStop().then(() => {
             this.sendStart(param, options);
         });
     }
 
     /**
-     * 最後に指定された走査方向
+     * 最後に指定された開始パラメーターを個別に取得します
+     *
+     * @param key 最後に指定された開始パラメーター
      */
-    public get lastDirection(): Direction {
-        return this.lastStartParam.direction;
+    public lastParam<T extends keyof StartParam>(key: T): StartParam[T];
+
+    /**
+     * 最後に指定された開始パラメーターをすべて取得します
+     */
+    public lastParam(): StartParam;
+
+    /**
+     * 上記実装
+     */
+    public lastParam<T extends keyof StartParam>(key?: T): StartParam[T] | StartParam {
+        if(typeof key === 'undefined') {
+            return this.lastStartParam;
+        } else {
+            return this.lastStartParam[key];
+        }
+    }
+
+    /**
+     * 最後に指定された開始モードを個別に取得します
+     *
+     * @param key 最後に指定された開始パラメーター
+     */
+    public lastMode<T extends keyof MODE>(key: T): MODE[T];
+
+    /**
+     * 最後に指定された開始モードをすべて取得します
+     */
+    public lastMode(): MODE;
+
+    /**
+     * 上記実装
+     */
+    public lastMode<T extends keyof MODE>(key?: T): MODE[T] | MODE {
+        if(typeof key === 'undefined') {
+            return this.lastStartMode;
+        } else {
+            return this.lastStartMode[key];
+        }
     }
 
     /**
@@ -237,7 +276,7 @@ export class ProcedureApiClient<T extends {}> {
      * @param type イベント名
      * @param listener イベントリスナー
      */
-    public addEventListener<K extends keyof ProcedureApiClientMap<T>>(type: K, listener: (this: ProcedureApiClient<T>, e: ProcedureApiClientMap<T>[K][0], p: ProcedureApiClientMap<T>[K][1]) => any): void {
+    public addEventListener<K extends keyof ProcedureApiClientMap<MODE>>(type: K, listener: (this: ProcedureApiClient<MODE>, e: ProcedureApiClientMap<MODE>[K][0], p: ProcedureApiClientMap<MODE>[K][1]) => any): void {
         this.emitter.addListener(type, listener, this);
     }
 
@@ -247,7 +286,7 @@ export class ProcedureApiClient<T extends {}> {
      * @param type イベント名
      * @param listener イベントリスナー
      */
-    public removeEventListener<K extends keyof ProcedureApiClientMap<T>>(type: K, listener: (this: ProcedureApiClient<T>, e: ProcedureApiClientMap<T>[K][0], p: ProcedureApiClientMap<T>[K][1]) => any): void {
+    public removeEventListener<K extends keyof ProcedureApiClientMap<MODE>>(type: K, listener: (this: ProcedureApiClient<MODE>, e: ProcedureApiClientMap<MODE>[K][0], p: ProcedureApiClientMap<MODE>[K][1]) => any): void {
         this.emitter.removeListener(type, listener, this);
     }
 

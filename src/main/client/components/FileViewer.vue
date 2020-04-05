@@ -80,6 +80,13 @@
                 this.searching = false;
                 this.$refs.fileRenderer.$emit('show-head', path);
             });
+
+            this.$on('show-there', (path, range) => {
+                this.path = path;
+                this.search = '';
+                this.searching = false;
+                this.$refs.fileRenderer.$emit('show-there', path, range);
+            });
         },
         methods: {
             toggleScrollLock: function() {

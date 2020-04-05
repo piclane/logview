@@ -8,7 +8,11 @@
 
     export default {
         mounted() {
-            this.$refs.fileViewer.$emit('show-tail', this.currentPath);
+            if(this.currentPosition !== null) {
+                this.$refs.fileViewer.$emit('show-there', this.currentPath, this.currentPosition);
+            } else {
+                this.$refs.fileViewer.$emit('show-tail', this.currentPath);
+            }
         },
         computed: {
             currentPath: function() {
@@ -17,6 +21,16 @@
                     path = this.$route.query.path;
                 }
                 return Path.of(path).normalize();
+            },
+            currentPosition: function() {
+                let m = /B(\d+)(-(\d+))?/.exec(this.$route.hash);
+                if(m) {
+                    return {
+                        start: parseInt(m[1]),
+                        end: parseInt(m[2] ? m[3] : m[1])
+                    }
+                }
+                return null;
             }
         },
         components: {

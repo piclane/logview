@@ -2,7 +2,8 @@ import Queue from "@/utils/Queue";
 import $ from "jquery";
 import Path from "@/utils/Path";
 import {Vue} from "vue/types/vue";
-import {Direction, Line, Message, ProcedureApiClient, Signal, StartParam} from "@/utils/api/ProcedureApiClient";
+import {Line, Message, ProcedureApiClient, Signal, StartParam} from "@/utils/api/ProcedureApiClient";
+import Marker from "@/utils/Marker";
 
 
 /**
@@ -23,6 +24,21 @@ interface ComponentData {
 }
 
 /**
+ * 範囲
+ */
+interface Range {
+    /**
+     * 開始位置 (この位置を含む)
+     */
+    start: number;
+
+    /**
+     * 終了位置 (この位置を含む)
+     */
+    end: number;
+}
+
+/**
  * 開始モード
  */
 interface StartMode {
@@ -32,8 +48,20 @@ interface StartMode {
      *   常にスクロールを下部に固定します
      * - keep
      *   表示が動かないように見えるようにスクロールを調節します
+     * - none
+     *   スクロールを制御しません
      */
-    scroll: 'bottom' | 'keep';
+    scroll: 'bottom' | 'keep' | 'none';
+
+    /**
+     * 強調表示する範囲
+     */
+    emphasisRange?: Range;
+
+    /**
+     * 強調表示するマーカー
+     */
+    emphasisMarker?: Marker;
 }
 
 /**
@@ -65,8 +93,8 @@ export default class FileRendererViewModel {
     /** 表示されている行数 */
     private currentlineCount = 0;
 
-    /** 中断中の場合 true そうでない場合 false */
-    private suspended = false;
+    /** 中断中の場合 enabled:true そうでない場合 enabled:false */
+    private suspended: {enabled: false} | {enabled: true; startMode: StartMode} = {enabled: false};
 
     /**
      * コンストラクタ
@@ -90,7 +118,11 @@ export default class FileRendererViewModel {
 
         this.data = component.$data as ComponentData;
         this.$logs = $(component.$el as HTMLElement);
-        this.$contents = this.$logs.find('.contents');
+        this.$contents = this.$logs.find('.contents')
+            .on('click', 'a', e => {
+                return e.shiftKey || e.metaKey;
+            })
+            .on('dragstart', 'a', () => false);
     }
 
     /**
@@ -104,9 +136,9 @@ export default class FileRendererViewModel {
      * ファイルの先頭を表示します
      *
      * @param path ファイルパス
-     * @param options 開始パラメーター
+     * @param params 開始パラメーター
      */
-    public openHead(path: Path, options?: Partial<StartParam>): void {
+    public openHead(path: Path, params?: Partial<StartParam>): void {
         this.client.sendStopAndStart(Object.assign({
             path: path,
             procedure: 'read',
@@ -116,7 +148,7 @@ export default class FileRendererViewModel {
             offsetBytes: 0,
             skipLines: 0,
             follow: true
-        }, options), {
+        }, params), {
             scroll: "bottom"
         });
     }
@@ -125,9 +157,9 @@ export default class FileRendererViewModel {
      * ファイルの末尾を表示します
      *
      * @param path ファイルパス
-     * @param options 開始パラメーター
+     * @param params 開始パラメーター
      */
-    public openTail(path: Path, options?: Partial<StartParam>): void {
+    public openTail(path: Path, params?: Partial<StartParam>): void {
         this.client.sendStopAndStart(Object.assign({
             path: path,
             procedure: 'read',
@@ -136,9 +168,25 @@ export default class FileRendererViewModel {
             offsetStart: 'tail',
             offsetBytes: 0,
             skipLines: -FileRendererViewModel.bufferLines,
-            follow: true
-        }, options), {
+            follow: false
+        }, params), {
             scroll: "bottom"
+        });
+    }
+
+    public openThere(path: Path, range: Range): void {
+        this.client.sendStopAndStart({
+            path: path,
+            procedure: 'read',
+            lines: FileRendererViewModel.bufferLines,
+            direction: 'forward',
+            offsetStart: 'head',
+            offsetBytes: range.start,
+            skipLines: -Math.floor(FileRendererViewModel.bufferLines / 2),
+            follow: true
+        }, {
+            scroll: "bottom",
+            emphasisRange: range
         });
     }
 
@@ -162,7 +210,8 @@ export default class FileRendererViewModel {
             follow: true,
             search: query
         }, {
-            scroll: "bottom"
+            scroll: "bottom",
+            emphasisMarker: new Marker(query)
         });
     }
 
@@ -226,25 +275,28 @@ export default class FileRendererViewModel {
      * 表示の更新を一時停止します
      */
     public suspend(): void {
-        this.suspended = true;
+        this.suspended = {enabled: true, startMode: this.client.lastMode()};
         this.queue.cancel();
         this.client.sendStop().then(() => {
             this.queue.resume();
-        })
+        });
     }
 
     /**
      * 表示の更新を再開します
      */
     public resume(): void {
+        if(!this.suspended.enabled) {
+            return;
+        }
         const $lastLine = this.$contents.children('*:last');
         this.client.sendStart({
             offsetStart: 'head',
             offsetBytes: $lastLine.length ? $lastLine.data('pos') + $lastLine.data('len') : 0,
             skipLines: 0,
             follow: true
-        });
-        this.suspended = false;
+        }, this.suspended.startMode);
+        this.suspended = {enabled: false};
     }
 
     /**
@@ -278,26 +330,37 @@ export default class FileRendererViewModel {
      * @param startMode 開始モード
      */
     protected receiveMessage(messages: Message[], startMode: StartMode): void {
+        const emRange = Object.assign({
+            start: -1, end: -1
+        }, startMode.emphasisRange);
         let childCount = this.$contents.children().length;
         for(let message of messages) {
             if('signal' in message) {
-                this.processSignal(message);
+                this.processSignal(message, startMode);
                 continue;
             }
 
             if('str' in message) {
                 const line = message as Line;
-                const $line = $('<s>')
+                const $line = $('<a>')
                     .text(line.str)
+                    .prop('href', `#/$/file${this.client.lastParam('path')}#B${line.pos}`)
+                    .toggleClass('emphasis', emRange.start <= line.pos && line.pos <= emRange.end)
                     .data({
                         pos: line.pos,
                         len: line.len
                     });
 
+                // 強調表示
+                if(startMode.emphasisMarker) {
+                    startMode.emphasisMarker.mark($line[0]);
+                }
+
+                // 配置
                 let scrollTop = this.$logs.prop('scrollTop');
                 let scrollDy = FileRendererViewModel.lineHeight;
                 childCount++;
-                if (this.client.lastDirection === 'forward') {
+                if (this.client.lastParam('direction') === 'forward') {
                     scrollDy = -scrollDy;
                     this.$contents.append($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
@@ -329,8 +392,9 @@ export default class FileRendererViewModel {
      * シグナルを処理します
      *
      * @param signal シグナル
+     * @param startMode 開始モード
      */
-    protected processSignal(signal: Signal): void {
+    protected processSignal(signal: Signal, startMode: StartMode): void {
         switch(signal.signal) {
             case 'file_length':
                 if(signal.value) {
@@ -343,6 +407,16 @@ export default class FileRendererViewModel {
             case 'eof':
                 this.data.eof = true;
                 this.data.searching = false;
+                break;
+            case 'eor':
+                if(startMode.emphasisRange !== null) {
+                    const $em = this.$contents.find('.emphasis:first');
+                    if($em.length) {
+                        const height = this.$logs.innerHeight() as number;
+                        this.$logs.scrollTop($em.position().top - height / 4);
+                        delete startMode.emphasisRange;
+                    }
+                }
                 break;
         }
     }

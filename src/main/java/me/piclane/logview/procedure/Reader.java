@@ -83,6 +83,11 @@ class Reader implements Runnable {
                 }
             }
 
+            // リクエストされた行の送出完了
+            try (Writer writer = session.getBasicRemote().getSendWriter()) {
+                Json.serialize(new Object[]{Signal.EOR}, writer);
+            }
+
             // 最終行まで検索が終了したことを伝える
             if(param.getDirection() == Direction.forward && !reader.hasNextLine()) {
                 try (Writer writer = session.getBasicRemote().getSendWriter()) {

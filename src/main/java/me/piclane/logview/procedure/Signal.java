@@ -12,6 +12,9 @@ public class Signal {
     /** ファイルの終端 */
     public static final Signal EOF = new Signal("eof");
 
+    /** リクエストされたバッファを送信完了 */
+    public static final Signal EOR = new Signal("eor");
+
     /** ファイルの長さ */
     public static Signal FILE_LENGTH(long length) {
         return new Signal("file_length", length);

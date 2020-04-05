@@ -76,6 +76,16 @@
                 this.renderer.openHead(path);
             });
 
+            this.$on('show-there', (path, range) => {
+                if(path.isEmpty) {
+                    return;
+                }
+                this.scrollLock = false;
+                this.path = path;
+                this.renderer.clear();
+                this.renderer.openThere(path, range);
+            });
+
             this.$on('search', (query, smart) => {
                 this.scrollLock = false;
                 this.renderer.clear();
@@ -121,7 +131,6 @@
     }
 
     .logs > * {
-        padding: 0 10px;
     }
 
     .logs > .top {
@@ -142,6 +151,7 @@
         cursor: pointer;
         user-select: none;
         z-index: 1;
+        position: relative;
     }
 
     .logs > .show_before {
@@ -166,7 +176,9 @@
         box-shadow: 0 0 20px 15px aliceblue;
     }
 
+    .logs >>> a,
     .logs >>> s {
+        padding: 0 10px;
         display: block;
         height: 16px;
         line-height: 16px;
@@ -176,16 +188,27 @@
         text-decoration: none;
     }
 
+    .logs >>> a {
+        color: inherit;
+        cursor: default;
+        user-select: text;
+    }
+
     .logs .contents {
-        z-index: -1;
+        z-index: 0;
         position: relative;
     }
 
-    .logs .contents >>> s.w2ui-marker {
+    .logs .contents >>> a em {
         display: inline;
         color: #444;
         background-color: rgba(252, 244, 161, 0.48);
         font-weight: bold;
+        font-style: inherit;
+    }
+
+    .logs .contents >>> a.emphasis {
+        background-color: rgba(252, 244, 161, 0.48);
     }
 
     .logs .contents >>> span.error {
