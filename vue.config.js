@@ -11,6 +11,10 @@ module.exports = {
                 ws: true,
                 changeOrigin: true
             }
+        },
+        watchOptions: {
+            poll: 1000,
+            ignored: ["node_modules"]
         }
     },
     configureWebpack: {

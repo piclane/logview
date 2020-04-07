@@ -5,8 +5,20 @@ export default class Queue {
     /** キューが有効かどうか */
     private enabled = true;
 
+    /** キューのタスクの最大容量 */
+    private readonly capacity: number;
+
     /** 既にキューイング済みのタイマーID */
-    private timerIds = new Set<number>();
+    private readonly timerIds: number[] = [];
+
+    /**
+     * コンストラクタ
+     *
+     * @param capacity タスクの最大容量
+     */
+    constructor(capacity: number) {
+        this.capacity = capacity;
+    }
 
     /**
      * キューにタスクを追加します
@@ -18,14 +30,21 @@ export default class Queue {
         if(!this.enabled) {
             return;
         }
-        let timerId = setTimeout(() => {
-            this.timerIds.delete(timerId);
-            if(!this.enabled) {
-                return;
+        const timerId = setTimeout(() => {
+            const idx = this.timerIds.indexOf(timerId);
+            if(idx !== -1) {
+                this.timerIds.splice(idx, 1);
             }
-            fn();
-        }, 0);
-        this.timerIds.add(timerId);
+            if(this.enabled) {
+                fn();
+            }
+        }, 13);
+        this.timerIds.push(timerId);
+
+        // 容量を超えたタスクをキャンセル
+        if(this.timerIds.length > this.capacity) {
+            clearTimeout(this.timerIds.shift());
+        }
     }
 
     /**
@@ -41,6 +60,7 @@ export default class Queue {
      */
     public clear(): void {
         this.timerIds.forEach(timerId => clearTimeout(timerId));
+        this.timerIds.splice(0, this.timerIds.length);
     }
 
     /**

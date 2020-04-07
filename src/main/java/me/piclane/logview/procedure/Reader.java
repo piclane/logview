@@ -15,6 +15,9 @@ import java.util.List;
  * ふつうの読込
  */
 class Reader implements Runnable {
+    /** 一度に送信する行数 */
+    static final int LINES_TO_SEND_AT_ONCE = 100;
+
     /** {@link Session} */
     private final Session session;
 
@@ -41,10 +44,7 @@ class Reader implements Runnable {
         String oldName = currentThread.getName();
         currentThread.setName(getClass().getSimpleName() + "-" + path.getFileName());
 
-        // 一度に送信する行数
-        int lineCountMax = 100;
-        Line[] lines = new Line[lineCountMax];
-
+        Line[] lines = new Line[LINES_TO_SEND_AT_ONCE];
         try(LineReader reader = LineReader.of(param)) {
             // ファイル長を送信
             try(Writer writer = session.getBasicRemote().getSendWriter()) {
@@ -66,7 +66,7 @@ class Reader implements Runnable {
                 }
 
                 // 最大 lineCountMax 行読み込む
-                for(lineCount=0; lineCount<lineCountMax && lineCountAll<param.getLines(); lineCount++, lineCountAll++) {
+                for(lineCount=0; lineCount<LINES_TO_SEND_AT_ONCE && lineCountAll<param.getLines(); lineCount++, lineCountAll++) {
                     Line line = reader.readLine();
                     if(line == null) {
                         hasNextLine = false;
@@ -119,7 +119,7 @@ class Reader implements Runnable {
                 // 最大 lineCountMax 行読み込む
                 hasNextLine = true;
                 while(hasNextLine) {
-                    for (lineCount = 0; lineCount < lineCountMax; ) {
+                    for (lineCount = 0; lineCount < LINES_TO_SEND_AT_ONCE; ) {
                         Line line = reader.readLine();
                         if (line == null) {
                             hasNextLine = false;

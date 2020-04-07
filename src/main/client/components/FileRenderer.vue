@@ -2,29 +2,23 @@
     <div class="file-renderer logs">
         <div
             class="bof xof top"
-            v-show="bof && !empty"
-        ></div>
+            v-show="bof && !empty"></div>
         <div
             class="show_before show_link top"
             v-show="!bof && !empty"
-            @click="showBefore"
-        ><s>Display previous lines</s></div>
+            @click="showBefore">Display previous lines</div>
         <div
-            class="contents"
-        ></div>
+            class="contents"></div>
         <div
             class="show_after show_link bottom"
             v-show="!eof && !empty && !searching"
-            @click="showAfter"
-        ><s>Display next lines</s></div>
+            @click="showAfter">Display next lines</div>
         <div
             class="eof xof bottom"
-            v-show="eof && !empty"
-        ><s>[EOF]</s></div>
+            v-show="eof && !empty"><s>[EOF]</s></div>
         <div
             class="searching xof bottom"
-            v-show="searching && !empty"
-        ><s>[Searching<i class="icon-searching"></i>]</s></div>
+            v-show="searching && !empty"><s>[Searching<i class="icon-searching"></i>]</s></div>
     </div>
 </template>
 
@@ -143,15 +137,18 @@
 
     .logs > .xof {
         color: #227868;
+        padding-right: 10px;
+        padding-left: 14px;
     }
 
     .logs > .show_link {
+        position: relative;
+        z-index: 1;
+        font-size: 13px;
         text-align: center;
         background-color: white;
         cursor: pointer;
         user-select: none;
-        z-index: 1;
-        position: relative;
     }
 
     .logs > .show_before {
@@ -176,22 +173,27 @@
         box-shadow: 0 0 20px 15px aliceblue;
     }
 
-    .logs >>> a,
     .logs >>> s {
-        padding: 0 10px;
-        display: block;
+        display: flex;
         height: 16px;
         line-height: 16px;
         font-size: 12px;
         font-family: monospace;
         white-space: pre;
         text-decoration: none;
+        padding: 0 10px 0 0;
     }
 
     .logs >>> a {
-        color: inherit;
-        cursor: default;
-        user-select: text;
+        display: inline-block;
+        width: 16px;
+        min-width: 16px;
+    }
+
+    .logs >>> b {
+        display: inline-block;
+        flex-grow: 1;
+        font-weight: normal;
     }
 
     .logs .contents {
@@ -199,7 +201,7 @@
         position: relative;
     }
 
-    .logs .contents >>> a em {
+    .logs .contents >>> em {
         display: inline;
         color: #444;
         background-color: rgba(252, 244, 161, 0.48);
@@ -207,8 +209,16 @@
         font-style: inherit;
     }
 
-    .logs .contents >>> a.emphasis {
+    .logs .contents >>> s.emphasis {
         background-color: rgba(252, 244, 161, 0.48);
+    }
+
+    .logs .contents >>> s.hover b {
+        background-color: rgba(160, 250, 160, 0.3);
+    }
+
+    .logs .contents >>> s.hover a {
+        background-color: rgba(160, 250, 160, 0.8);
     }
 
     .logs .contents >>> span.error {

@@ -44,6 +44,8 @@ interface Range {
 interface StartMode {
     /**
      * スクロールモード
+     * - top
+     *   常にスクロールを上部に固定します
      * - bottom
      *   常にスクロールを下部に固定します
      * - keep
@@ -51,7 +53,7 @@ interface StartMode {
      * - none
      *   スクロールを制御しません
      */
-    scroll: 'bottom' | 'keep' | 'none';
+    scroll: 'top' | 'bottom' | 'keep' | 'none';
 
     /**
      * 強調表示する範囲
@@ -79,7 +81,7 @@ export default class FileRendererViewModel {
     private readonly client: ProcedureApiClient<StartMode>;
 
     /** タスクキュー */
-    private readonly queue = new Queue();
+    private readonly queue = new Queue(FileRendererViewModel.bufferLines / 10);
 
     /** 表示コンポーネントのデータ */
     private readonly data: ComponentData;
@@ -121,6 +123,12 @@ export default class FileRendererViewModel {
         this.$contents = this.$logs.find('.contents')
             .on('click', 'a', e => {
                 return e.shiftKey || e.metaKey;
+            })
+            .on('mouseenter', 'a', e => {
+                $(e.target).closest('s').addClass('hover');
+            })
+            .on('mouseleave', 'a', e => {
+                $(e.target).closest('s').removeClass('hover');
             })
             .on('dragstart', 'a', () => false);
     }
@@ -334,6 +342,8 @@ export default class FileRendererViewModel {
             start: -1, end: -1
         }, startMode.emphasisRange);
         let childCount = this.$contents.children().length;
+        const scrollTop = this.$logs.prop('scrollTop');
+        let scrollDy = 0;
         for(let message of messages) {
             if('signal' in message) {
                 this.processSignal(message, startMode);
@@ -342,9 +352,13 @@ export default class FileRendererViewModel {
 
             if('str' in message) {
                 const line = message as Line;
-                const $line = $('<a>')
+                const $line = $('<s><a></a><b></b></s>')
+                    .find('b')
                     .text(line.str)
+                    .end()
+                    .find('a')
                     .prop('href', `#/$/file${this.client.lastParam('path')}#B${line.pos}`)
+                    .end()
                     .toggleClass('emphasis', emRange.start <= line.pos && line.pos <= emRange.end)
                     .data({
                         pos: line.pos,
@@ -357,33 +371,37 @@ export default class FileRendererViewModel {
                 }
 
                 // 配置
-                let scrollTop = this.$logs.prop('scrollTop');
-                let scrollDy = FileRendererViewModel.lineHeight;
                 childCount++;
                 if (this.client.lastParam('direction') === 'forward') {
-                    scrollDy = -scrollDy;
+                    scrollDy -= FileRendererViewModel.lineHeight;
                     this.$contents.append($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:first').remove();
                         childCount--;
                     }
                 } else {
+                    scrollDy += FileRendererViewModel.lineHeight;
                     this.$contents.prepend($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:last').remove();
                         childCount--;
                     }
                 }
+            }
+        }
 
-                // 適切な位置にスクロールする
-                switch (startMode.scroll) {
-                    case "keep":
-                        this.$logs.scrollTop(scrollTop + scrollDy);
-                        break;
-                    case "bottom":
-                        this.$logs.scrollTop(this.$logs.prop('scrollHeight'));
-                        break;
-                }
+        // 適切な位置にスクロールする
+        if(scrollDy !== 0) {
+            switch (startMode.scroll) {
+                case "top":
+                    this.$logs.scrollTop(0);
+                    break;
+                case "bottom":
+                    this.$logs.scrollTop(this.$logs.prop('scrollHeight'));
+                    break;
+                case "keep":
+                    this.$logs.scrollTop(scrollTop + scrollDy);
+                    break;
             }
         }
     }

@@ -187,12 +187,12 @@ export class ProcedureApiClient<MODE extends {}> {
      * 開始コマンドを送信します
      *
      * @param param 開始パラメーター
-     * @param options ユーザーオプション
+     * @param mode 開始モード
      */
-    public sendStart(param: Partial<StartParam>, options: MODE): void {
+    public sendStart(param: Partial<StartParam>, mode: MODE): void {
         this.dispatchEvent('beforeStart');
 
-        this.lastStartMode = options;
+        this.lastStartMode = Object.assign({}, mode);
         this.lastStartParam = Object.assign({}, this.lastStartParam, param);
         const p = this.lastStartParam;
         this.wss.get().then(ws => {
@@ -216,11 +216,11 @@ export class ProcedureApiClient<MODE extends {}> {
      * 停止後に開始コマンドを送信します
      *
      * @param param 開始パラメーター
-     * @param options ユーザーオプション
+     * @param mode 開始モード
      */
-    public sendStopAndStart(param: Partial<StartParam>, options: MODE): void {
+    public sendStopAndStart(param: Partial<StartParam>, mode: MODE): void {
         this.sendStop().then(() => {
-            this.sendStart(param, options);
+            this.sendStart(param, mode);
         });
     }
 
