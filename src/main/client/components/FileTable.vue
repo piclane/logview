@@ -108,7 +108,7 @@
              * リンクをクリックした場合に呼び出されます
              */
             onClickLink: function(event) {
-                const el = event.target;
+                const el = event.currentTarget;
                 if(el.classList.contains('dir')) { // ディレクトリの場合
                     this.rows = [];
                     return;
@@ -224,7 +224,12 @@
     }
 
     a.logfile {
+        color: mediumblue;
         text-decoration: none;
+    }
+
+    a.logfile:visited {
+        color: mediumblue;
     }
 
     a.logfile i {
