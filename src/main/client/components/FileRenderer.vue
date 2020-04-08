@@ -2,23 +2,31 @@
     <div class="file-renderer logs">
         <div
             class="bof xof top"
-            v-show="bof && !empty"></div>
+            v-show="bof && !empty && !loading">
+        </div>
         <div
             class="show_before show_link top"
             v-show="!bof && !empty"
-            @click="showBefore">Display previous lines</div>
-        <div
-            class="contents"></div>
+            @click="showBefore">
+                <span>View previous lines</span>
+                <i class="icon-loading" :style="{visibility: loading ? 'visible' : 'hidden'}"></i>
+        </div>
+        <div class="contents"></div>
         <div
             class="show_after show_link bottom"
-            v-show="!eof && !empty && !searching"
-            @click="showAfter">Display next lines</div>
+            v-show="!eof && !empty && !loading && !searching"
+            @click="showAfter">
+                <span>View next lines</span>
+                <i class="icon-loading" :style="{visibility: loading ? 'visible' : 'hidden'}"></i>
+        </div>
         <div
             class="eof xof bottom"
             v-show="eof && !empty"><s>[EOF]</s></div>
         <div
             class="searching xof bottom"
-            v-show="searching && !empty"><s>[Searching<i class="icon-searching"></i>]</s></div>
+            v-show="searching && !empty">
+            <s>[Searching<i class="icon-searching"></i>]</s>
+        </div>
     </div>
 </template>
 
@@ -37,6 +45,9 @@
                 eof: false,
                 /** 検索中の場合 true そうでない場合 false */
                 searching: false,
+                /** ロード中の場合 true そうでない場合 false */
+                loading: false,
+                loadingIndicator: null,
                 /** FileRendererViewModel */
                 renderer: null
             };
@@ -105,6 +116,18 @@
             },
             searching: function(searching) {
                 this.$emit('searching', searching);
+            },
+            loading: function(loading) {
+                if(this.empty && loading) {
+                    this.loadingIndicator = this.$loading({
+                        fullscreen: false,
+                        target: this.$el,
+                        spinner: 'el-icon-loading',
+                        background: 'rgba(0, 0, 0, .1)'
+                    });
+                } else if(this.loadingIndicator) {
+                    this.loadingIndicator.close();
+                }
             }
         },
         methods: {
@@ -221,18 +244,23 @@
         background-color: rgba(160, 250, 160, 0.8);
     }
 
-    .logs .contents >>> span.error {
+    .logs .contents >>> s.error {
         padding: 10px;
         height: auto;
+        display: block;
     }
 
-    .logs .contents >>> span.error:before {
-        content: 'エラー';
+    .logs .contents >>> s.error:before {
+        content: 'An error has occurred.';
         display: block;
         border-bottom: 1px solid #CCC;
         padding: 5px 0;
         margin-bottom: 10px;
         font-size: 150%;
+    }
+
+    .logs >>> > .el-loading-mask .el-icon-loading {
+        font-size: 50px;
     }
 </style>
 <style src="../utils/Icon.css"></style>

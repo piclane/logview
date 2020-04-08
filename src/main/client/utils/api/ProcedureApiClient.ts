@@ -135,6 +135,9 @@ export class ProcedureApiClient<MODE extends {}> {
             ws.addEventListener('close', e => {
                 this.dispatchEvent('close', e);
             });
+            ws.addEventListener('error', e => {
+                this.dispatchEvent('error', e);
+            });
             ws.addEventListener('message', e => {
                 this.dispatchEvent('message', JSON.parse(e.data) as Message[], this.lastStartMode);
             });
@@ -209,7 +212,7 @@ export class ProcedureApiClient<MODE extends {}> {
                 search: p.search
             }));
             this.dispatchEvent('afterStart');
-        })
+        });
     }
 
     /**

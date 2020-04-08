@@ -21,6 +21,9 @@ interface ComponentData {
 
     /** 検索中の場合 true そうでない場合 false */
     searching: boolean;
+
+    /** ロード中の場合 true そうでない場合 false */
+    loading: boolean;
 }
 
 /**
@@ -147,6 +150,7 @@ export default class FileRendererViewModel {
      * @param params 開始パラメーター
      */
     public openHead(path: Path, params?: Partial<StartParam>): void {
+        this.data.loading = true;
         this.client.sendStopAndStart(Object.assign({
             path: path,
             procedure: 'read',
@@ -168,6 +172,7 @@ export default class FileRendererViewModel {
      * @param params 開始パラメーター
      */
     public openTail(path: Path, params?: Partial<StartParam>): void {
+        this.data.loading = true;
         this.client.sendStopAndStart(Object.assign({
             path: path,
             procedure: 'read',
@@ -183,6 +188,7 @@ export default class FileRendererViewModel {
     }
 
     public openThere(path: Path, range: Range): void {
+        this.data.loading = true;
         this.client.sendStopAndStart({
             path: path,
             procedure: 'read',
@@ -232,6 +238,7 @@ export default class FileRendererViewModel {
         }
 
         const pos = this.$contents.children('*:first').data('pos');
+        this.data.loading = true;
         this.client.sendStopAndStart({
             lines: FileRendererViewModel.bufferLines / 2,
             direction: 'backward',
@@ -254,6 +261,7 @@ export default class FileRendererViewModel {
 
         const $last = this.$contents.children('*:last');
         const pos = $last.data('pos') + $last.data('len');
+        this.data.loading = true;
         this.client.sendStopAndStart({
             lines: FileRendererViewModel.bufferLines / 2,
             direction: 'forward',
@@ -274,6 +282,7 @@ export default class FileRendererViewModel {
         this.data.bof = false;
         this.data.eof = false;
         this.data.searching = false;
+        this.data.loading = false;
         this.$contents.empty();
         this.queue.resume();
         this.currentlineCount = 0;
@@ -314,17 +323,20 @@ export default class FileRendererViewModel {
      */
     protected onClose(e: CloseEvent) {
         let nextPos = 0;
-        this.$contents.children('span:last').each(function() {
+        this.data.loading = false;
+        this.data.searching = false;
+        this.$contents.children('s:last').each(function() {
             nextPos = $(this).data('pos') + $(this).data('len');
         });
-        if(e.code !== 1000 /* 1000: Normal Closure */) {
-            $('<span class="eof error"></span>')
+        if(e.code !== 1000 /* 1000: Normal Closure */ && e.reason) {
+            $('<s class="eof error"></s>')
                 .text(e.reason)
                 .data('pos', nextPos)
                 .data('len', 0)
                 .appendTo(this.$contents);
         } else {
-            $('<span class="eof"></span>')
+            $('<s class="eof"></s>')
+                .text("An error has occurred while connecting to the server.")
                 .data('pos', nextPos)
                 .data('len', 0)
                 .appendTo(this.$contents);
@@ -403,6 +415,7 @@ export default class FileRendererViewModel {
                     this.$logs.scrollTop(scrollTop + scrollDy);
                     break;
             }
+            this.data.loading = false;
         }
     }
 

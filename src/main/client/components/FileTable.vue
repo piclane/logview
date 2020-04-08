@@ -20,6 +20,7 @@
         </div>
         <el-table
                 ref="table"
+                v-loading="loading"
                 :data="viewRows"
                 :default-sort="{prop: 'lastModified', order: 'descending'}"
                 @cell-click="passthroughEvent('cell-click', arguments)"
@@ -67,6 +68,8 @@
     import Path from "@/utils/Path";
     import ReemittableMixin from "@/utils/ReemittableMixin";
     import {listDir} from "@/utils/api/DirApiClient";
+    import Swal from 'sweetalert2'
+    import {showLoadFailed} from "@/utils/Alert";
 
     const defaultRenderer = (record, column, value) => {
         return value ? '' + value : '';
@@ -75,6 +78,7 @@
     export default {
         data() {
             return {
+                loading: false,
                 rows: [],
                 search: '',
                 sortProp: 'lastModified',
@@ -99,8 +103,13 @@
              * 再読み込みを行います
              */
             reload: function() {
+                this.loading = true;
                 listDir(this.currentPath).then(rows => {
+                    this.loading = false;
                     this.rows = rows;
+                }, err => {
+                    this.loading = false;
+                    return showLoadFailed(`${err.response.status} ${err.response.statusText}\n\n${err.response.data}`);
                 });
             },
 

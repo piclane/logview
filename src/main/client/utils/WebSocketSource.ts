@@ -34,9 +34,6 @@ export class WebSocketSource {
                 ws.addEventListener('open', e => {
                     resolve(e.target as WebSocket);
                 });
-                ws.addEventListener('error', e => {
-                    reject(e);
-                });
                 this.initFn(ws);
             });
         } else if (this.ws.readyState === WebSocket.CONNECTING) {
