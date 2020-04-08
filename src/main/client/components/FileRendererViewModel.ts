@@ -329,13 +329,13 @@ export default class FileRendererViewModel {
             nextPos = $(this).data('pos') + $(this).data('len');
         });
         if(e.code !== 1000 /* 1000: Normal Closure */ && e.reason) {
-            $('<s class="eof error"></s>')
+            $('<s class="error"></s>')
                 .text(e.reason)
                 .data('pos', nextPos)
                 .data('len', 0)
                 .appendTo(this.$contents);
         } else {
-            $('<s class="eof"></s>')
+            $('<s class="error"></s>')
                 .text("An error has occurred while connecting to the server.")
                 .data('pos', nextPos)
                 .data('len', 0)

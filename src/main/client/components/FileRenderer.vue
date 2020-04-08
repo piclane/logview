@@ -248,6 +248,7 @@
         padding: 10px;
         height: auto;
         display: block;
+        font-family: sans-serif;
     }
 
     .logs .contents >>> s.error:before {
@@ -257,6 +258,7 @@
         padding: 5px 0;
         margin-bottom: 10px;
         font-size: 150%;
+        color: darkred;
     }
 
     .logs >>> > .el-loading-mask .el-icon-loading {
