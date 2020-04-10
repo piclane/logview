@@ -38,6 +38,9 @@ public class MessageConsumableWriter extends StringWriter {
                 String json = queue.take();
                 assertThat(json, is(allOf(startsWith("["), endsWith("]"))));
                 this.messages = gson.fromJson(json, Deque_Map_Type);
+//                System.out.print(messages.size());
+//                System.out.print(" ");
+//                System.out.println(json);
             }
         } while(consumer.consume(messages.pollFirst()));
     }
@@ -48,7 +51,6 @@ public class MessageConsumableWriter extends StringWriter {
     @Override
     public void close() {
         StringBuffer buf = super.getBuffer();
-//        System.out.println(buf);
         queue.add(buf.toString());
         buf.setLength(0);
     }

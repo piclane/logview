@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,7 +67,7 @@ public class ReaderTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void testReadForward() throws Exception {
         MessageConsumableWriter writer = new MessageConsumableWriter();
 
         RemoteEndpoint.Basic endpoint = mock(RemoteEndpoint.Basic.class);
@@ -75,56 +77,260 @@ public class ReaderTest {
         doReturn(true).when(session).isOpen();
         doReturn(endpoint).when(session).getBasicRemote();
 
-        Param param = new Param();
-        param.setPath(this.testPath);
-        param.setStatus(Status.start);
-        param.setDirection(Direction.forward);
-        param.setLines(200);
-        param.setOffsetBytes(0);
-        param.setOffsetStart(OffsetStart.head);
-        param.setSkipLines(0);
-        param.setFollow(true);
-
-        Thread t = new Thread(new Reader(session, param));
-        t.start();
-
-        // file length
-        writer.consume(m -> {
-            assertThat(m, hasEntry("signal", "file_length"));
-            assertThat(m, hasKey("value"));
-            assertThat(m, hasEntry(equalTo("value"), new IntEqualTo(8200)));
-            return false;
-        });
-
-        // begin of file signal
-        writer.consume(m -> {
-            assertThat(m, hasEntry("signal", "bof"));
-            return false;
-        });
-
-        // lines
         AtomicInteger lineNum = new AtomicInteger();
-        int[] pos = new int[] { 0 };
-        writer.consume(m -> {
-            int line = lineNum.getAndIncrement();
-            String expectedStr = expectLines.get(line);
-            int expectedLen = expectedStr.length() + 1;
+        int[] pos = new int[]{0};
+        Thread t;
 
-            assertThat(m, hasEntry(equalTo("pos"), new IntEqualTo(pos[0])));
-            assertThat(m, hasEntry(equalTo("len"), new IntEqualTo(expectedLen)));
-            assertThat(m, hasEntry(equalTo("str"), equalTo(expectedStr)));
-            pos[0] += expectedLen;
-            return param.getLines() - 1 != line;
-        });
+        { // Get the first 200 lines.
+            Param param = new Param();
+            param.setPath(this.testPath);
+            param.setStatus(Status.start);
+            param.setDirection(Direction.forward);
+            param.setLines(200);
+            param.setOffsetBytes(0);
+            param.setOffsetStart(OffsetStart.head);
+            param.setSkipLines(0);
+            param.setFollow(true);
 
-        // end of requested signal
-        writer.consume(m -> {
-            assertThat(m, hasEntry("signal", "eor"));
-            return false;
-        });
+            t = new Thread(new Reader(session, param));
+            t.start();
 
-        t.interrupt();
-        t.join();
+            // file length
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "file_length"));
+                assertThat(m, hasKey("value"));
+                assertThat(m, hasEntry(equalTo("value"), new IntEqualTo(8200)));
+                return false;
+            });
+
+            // begin of file signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "bof"));
+                return false;
+            });
+
+            // lines
+            writer.consume(m -> {
+                int line = lineNum.getAndIncrement();
+                String expectedStr = expectLines.get(line);
+                int expectedLen = expectedStr.length() + 1;
+                assertThat(m, hasEntry(equalTo("pos"), new IntEqualTo(pos[0])));
+                assertThat(m, hasEntry(equalTo("len"), new IntEqualTo(expectedLen)));
+                assertThat(m, hasEntry(equalTo("str"), equalTo(expectedStr)));
+                pos[0] += expectedLen;
+                return param.getLines() - 1 != line;
+            });
+
+            // end of requested signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "eor"));
+                return false;
+            });
+
+            // Thread was dead
+            Thread.sleep(100L);
+            assertThat(t.isAlive(), is(equalTo(false)));
+        }
+
+        { // Get 100 lines of remains.
+            Param param = new Param();
+            param.setPath(this.testPath);
+            param.setStatus(Status.start);
+            param.setDirection(Direction.forward);
+            param.setLines(200);
+            param.setOffsetBytes(pos[0]);
+            param.setOffsetStart(OffsetStart.head);
+            param.setSkipLines(0);
+            param.setFollow(true);
+
+            t = new Thread(new Reader(session, param));
+            t.start();
+
+            // file length
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "file_length"));
+                assertThat(m, hasKey("value"));
+                assertThat(m, hasEntry(equalTo("value"), new IntEqualTo(8200)));
+                return false;
+            });
+
+            // lines
+            writer.consume(m -> {
+                int line = lineNum.getAndIncrement();
+                String expectedStr = expectLines.get(line);
+                int expectedLen = expectedStr.length() + 1;
+                assertThat(m, hasEntry(equalTo("pos"), new IntEqualTo(pos[0])));
+                assertThat(m, hasEntry(equalTo("len"), new IntEqualTo(expectedLen)));
+                assertThat(m, hasEntry(equalTo("str"), equalTo(expectedStr)));
+                pos[0] += expectedLen;
+                return expectLines.size() - 1 != line;
+            });
+
+            // end of requested signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "eor"));
+                return false;
+            });
+
+            // end of file signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "eof"));
+                return false;
+            });
+
+            // Thread was not dead
+            Thread.sleep(100L);
+            assertThat(t.isAlive(), is(equalTo(true)));
+        }
+
+        { // Get the added rows
+            // append 2 lines
+            Files.write(testPath, Arrays.asList("aaaaaaaaaa", "bbbbbbbbbb"), StandardOpenOption.APPEND);
+            Thread.sleep(200L);
+
+            // test line aaaaaaaaaa
+            writer.consume(m -> {
+                String expectedStr = "aaaaaaaaaa";
+                int expectedLen = expectedStr.length() + 1;
+                assertThat(m, hasEntry(equalTo("pos"), new IntEqualTo(pos[0])));
+                assertThat(m, hasEntry(equalTo("len"), new IntEqualTo(expectedLen)));
+                assertThat(m, hasEntry(equalTo("str"), equalTo(expectedStr)));
+                pos[0] += expectedLen;
+                return false;
+            });
+
+            // test line bbbbbbbbbb
+            writer.consume(m -> {
+                String expectedStr = "bbbbbbbbbb";
+                int expectedLen = expectedStr.length() + 1;
+                assertThat(m, hasEntry(equalTo("pos"), new IntEqualTo(pos[0])));
+                assertThat(m, hasEntry(equalTo("len"), new IntEqualTo(expectedLen)));
+                assertThat(m, hasEntry(equalTo("str"), equalTo(expectedStr)));
+                pos[0] += expectedLen;
+                return false;
+            });
+
+            // end of file signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "eof"));
+                return false;
+            });
+
+            t.interrupt();
+            t.join();
+        }
+    }
+
+    @Test
+    public void testReadBackward() throws Exception {
+        MessageConsumableWriter writer = new MessageConsumableWriter();
+
+        RemoteEndpoint.Basic endpoint = mock(RemoteEndpoint.Basic.class);
+        doReturn(writer).when(endpoint).getSendWriter();
+
+        Session session = mock(Session.class);
+        doReturn(true).when(session).isOpen();
+        doReturn(endpoint).when(session).getBasicRemote();
+
+        AtomicInteger lineNum = new AtomicInteger(299);
+        int[] pos = new int[]{8200};
+        Thread t;
+
+        { // Get the last 200 lines.
+            Param param = new Param();
+            param.setPath(this.testPath);
+            param.setStatus(Status.start);
+            param.setDirection(Direction.backward);
+            param.setLines(200);
+            param.setOffsetBytes(0);
+            param.setOffsetStart(OffsetStart.tail);
+            param.setSkipLines(0);
+            param.setFollow(true);
+
+            t = new Thread(new Reader(session, param));
+            t.start();
+
+            // file length
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "file_length"));
+                assertThat(m, hasKey("value"));
+                assertThat(m, hasEntry(equalTo("value"), new IntEqualTo(8200)));
+                return false;
+            });
+
+            // lines
+            writer.consume(m -> {
+                int line = lineNum.getAndDecrement();
+                String expectedStr = expectLines.get(line);
+                int expectedLen = expectedStr.length() + 1;
+                pos[0] -= expectedLen;
+                assertThat(m, hasEntry(equalTo("pos"), new IntEqualTo(pos[0])));
+                assertThat(m, hasEntry(equalTo("len"), new IntEqualTo(expectedLen)));
+                assertThat(m, hasEntry(equalTo("str"), equalTo(expectedStr)));
+                return 100 != line;
+            });
+
+            // end of requested signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "eor"));
+                return false;
+            });
+
+            // Thread was dead
+            Thread.sleep(100L);
+            assertThat(t.isAlive(), is(equalTo(false)));
+        }
+
+        { // Get 100 lines of remains.
+            Param param = new Param();
+            param.setPath(this.testPath);
+            param.setStatus(Status.start);
+            param.setDirection(Direction.backward);
+            param.setLines(200);
+            param.setOffsetBytes(pos[0]);
+            param.setOffsetStart(OffsetStart.head);
+            param.setSkipLines(0);
+            param.setFollow(true);
+
+            t = new Thread(new Reader(session, param));
+            t.start();
+
+            // file length
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "file_length"));
+                assertThat(m, hasKey("value"));
+                assertThat(m, hasEntry(equalTo("value"), new IntEqualTo(8200)));
+                return false;
+            });
+
+            // lines
+            writer.consume(m -> {
+                int line = lineNum.getAndDecrement();
+                String expectedStr = expectLines.get(line);
+                int expectedLen = expectedStr.length() + 1;
+                pos[0] -= expectedLen;
+                assertThat(m, hasEntry(equalTo("pos"), new IntEqualTo(pos[0])));
+                assertThat(m, hasEntry(equalTo("len"), new IntEqualTo(expectedLen)));
+                assertThat(m, hasEntry(equalTo("str"), equalTo(expectedStr)));
+                return 0 != line;
+            });
+
+            // end of requested signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "eor"));
+                return false;
+            });
+
+            // begin of file signal
+            writer.consume(m -> {
+                assertThat(m, hasEntry("signal", "bof"));
+                return false;
+            });
+
+            // Thread was dead
+            Thread.sleep(100L);
+            assertThat(t.isAlive(), is(equalTo(false)));
+        }
     }
 
 }

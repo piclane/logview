@@ -128,7 +128,7 @@ public class LineReader implements AutoCloseable {
             lines.addLast(line);
             return lines.size() < lineBufferSize;
         });
-        Line last = lines.getLast();
+        Line last = lines.peekLast();
         if (last != null) {
             offset = offset.withPosition(last.pos + last.len);
         }
@@ -159,7 +159,7 @@ public class LineReader implements AutoCloseable {
             }
         } while(lines.size() < lineBufferSize && start > 0);
 
-        Line first = lines.getFirst();
+        Line first = lines.peekFirst();
         if(first != null) {
             offset = offset.withPosition(first.pos);
         }
