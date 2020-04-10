@@ -25,6 +25,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.*;
@@ -77,7 +78,7 @@ public class ReaderTest {
     }
 
     @Test
-    public void testForward() throws Exception {
+    public void testReadForward() throws Exception {
         MessageConsumableWriter writer = new MessageConsumableWriter();
 
         RemoteEndpoint.Basic endpoint = mock(RemoteEndpoint.Basic.class);

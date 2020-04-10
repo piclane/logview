@@ -159,22 +159,25 @@ class PlainSearch implements Runnable {
      */
     private void flushBuffer(boolean force, boolean eof) throws IOException {
         long now = System.currentTimeMillis();
-        if(force || now - lastFlushMillis > 200L || lineBuffer.size() > 100) {
-            if(!lineBuffer.isEmpty()) {
-                try(Writer writer = session.getBasicRemote().getSendWriter()) {
-                    Object[] buf;
-                    if(eof) {
-                        buf = lineBuffer.toArray(new Object[lineBuffer.size() + 1]);
-                        buf[buf.length - 1] = Signal.EOF;
-                    } else {
-                        buf = lineBuffer.toArray();
-                    }
-                    Json.serialize(buf, writer);
-                }
-                lineBuffer.clear();
-            }
-            lastFlushMillis = now;
+        if(!force && now - lastFlushMillis <= 200L && lineBuffer.size() < 100) {
+            return;
         }
+        if(lineBuffer.isEmpty()) {
+            lastFlushMillis = now;
+            return;
+        }
+        try(Writer writer = session.getBasicRemote().getSendWriter()) {
+            Object[] buf;
+            if(eof) {
+                buf = lineBuffer.toArray(new Object[lineBuffer.size() + 1]);
+                buf[buf.length - 1] = Signal.EOF;
+            } else {
+                buf = lineBuffer.toArray();
+            }
+            Json.serialize(buf, writer);
+        }
+        lineBuffer.clear();
+        lastFlushMillis = now;
     }
 
     /**
