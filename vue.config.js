@@ -31,11 +31,6 @@ module.exports = {
             entry: 'src/main/client/index.ts',
             template: 'src/main/client/public/index.html',
             filename: 'index.html'
-        },
-        log: {
-            entry: 'src/main/client/log.ts',
-            template: 'src/main/client/public/log.html',
-            filename: 'log.html'
         }
     }
 };

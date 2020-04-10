@@ -16,11 +16,7 @@
         },
         computed: {
             currentPath: function() {
-                let path = '/' + this.$route.params._path;
-                if(this.$route.query.path) {
-                    path = this.$route.query.path;
-                }
-                return Path.of(path).normalize();
+                return Path.of('/' + this.$route.params._path).normalize();
             },
             currentPosition: function() {
                 let m = /B(\d+)(-(\d+))?/.exec(this.$route.hash);

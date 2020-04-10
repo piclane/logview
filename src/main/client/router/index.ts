@@ -8,7 +8,6 @@ Vue.use(VueRouter);
 const router = new VueRouter({
   routes: [{
     path: '/$/file/:_path(.*)',
-    alias: '/log.html',
     name: 'File',
     component: File,
     props: true
