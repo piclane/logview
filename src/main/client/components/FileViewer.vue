@@ -23,6 +23,25 @@
                     :type="searchSmart ? 'gray' : 'text'"
                     @click="toggleSearchSmart" />
             </el-tooltip>
+            <el-divider direction="vertical"></el-divider>
+            <el-tooltip
+                    effect="dark"
+                    content="View the head">
+                <el-button
+                        type="text"
+                        size="mini"
+                        icon="el-icon-arrow-up"
+                        @click="$emit('show-head', path)"/>
+            </el-tooltip>
+            <el-tooltip
+                    effect="dark"
+                    content="View the tail">
+                <el-button
+                        type="text"
+                        size="mini"
+                        icon="el-icon-arrow-down"
+                        @click="$emit('show-tail', path)"/>
+            </el-tooltip>
             <el-tooltip
                 effect="dark"
                 content="Download">
@@ -141,6 +160,10 @@
         width: 12px;
         height: 12px;
         line-height: 24px;
+    }
+
+    .toolbar .el-divider {
+        background-color: rgba(255, 255, 255, 0.3);
     }
 
     .wrapper {

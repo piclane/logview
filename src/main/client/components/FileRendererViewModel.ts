@@ -4,6 +4,8 @@ import Path from "@/utils/Path";
 import {Vue} from "vue/types/vue";
 import {Line, Message, ProcedureApiClient, Signal, StartParam} from "@/utils/api/ProcedureApiClient";
 import Marker from "@/utils/Marker";
+import MouseMoveEvent = JQuery.MouseMoveEvent;
+import MouseDownEvent = JQuery.MouseDownEvent;
 
 
 /**
@@ -69,6 +71,133 @@ interface StartMode {
     emphasisMarker?: Marker;
 }
 
+/** 1行の高さ */
+const LINE_HEIGHT = 16;
+
+/**
+ * 選択ハンドルでマウスの左ボタンが押下された場合のハンドラーです
+ */
+class OnSelectionHandleMouseDown {
+    /** div.contents 要素 */
+    private readonly $parent: JQuery;
+
+    /** 選択ハンドルの a 要素 */
+    private readonly $start: JQuery;
+
+    /** マウスが押下された時の clientY */
+    private readonly startY: number;
+
+    /** ファイルパス */
+    private readonly path: string;
+
+    /** 最後にマウスカーソルが移動したときの移動距離 */
+    private lastDistance = 0;
+
+    /** まだ 1 ブロック以上マウスカーソルが移動していない場合に true そうでない場合 false */
+    private stable = true;
+
+    /**
+     * コンストラクタ
+     *
+     * @param e 選択ハンドルでマウスの左ボタンが押下された時の MouseDownEvent
+     * @param path ファイルパス
+     */
+    constructor(e: MouseDownEvent, path: Path | string) {
+        const $a = $(e.currentTarget);
+        this.$parent = $a.closest('div');
+        this.$start = $a.closest('s');
+        this.startY = e.clientY;
+        this.path = path.toString();
+        $(document.body)
+            .on('mousemove', this.onMouseMove.bind(this))
+            .on('mouseup', this.onMouseUp.bind(this));
+    }
+
+    /**
+     * mousemove イベントで呼び出されます
+     *
+     * @param e MouseMoveEvent
+     */
+    private onMouseMove(e: MouseMoveEvent): void {
+        const $start = this.$start;
+        const lastDistance = this.lastDistance;
+        let distance = Math.floor((e.clientY - this.startY) / LINE_HEIGHT);
+        if(lastDistance == distance) {
+            return;
+        }
+
+        if(this.stable) {
+            this.clearSelection();
+            this.stable = false;
+        }
+
+        const minDistance = Math.min(lastDistance, distance);
+        const maxDistance = Math.max(lastDistance, distance);
+
+        for(let i=-1, $s=$start.prev(); i>=minDistance; i--, $s=$s.prev()) {
+            if(i < maxDistance) {
+                $s.toggleClass('select', distance < lastDistance);
+            }
+        }
+
+        for(let i=1, $s=$start.next(); i<=maxDistance; i++, $s=$s.next()) {
+            if(i > minDistance) {
+                $s.toggleClass('select', distance > lastDistance);
+            }
+        }
+
+        this.fillHref();
+
+        this.lastDistance = distance;
+    }
+
+    /**
+     * mouseup イベントで呼び出されます
+     */
+    private onMouseUp(): void {
+        if(this.stable) {
+            this.clearSelection();
+            this.stable = false;
+        }
+        this.fillHref();
+        $(document.body)
+            .off('mousemove')
+            .off('mouseup');
+    }
+
+    /**
+     * 最初に選択された行を除いて、選択をすべて解除します
+     */
+    private clearSelection(): void {
+        this.$parent.find('s.select')
+            .children('a')
+            .prop('href', function() { return $(this).data('href'); })
+            .end()
+            .removeClass('select');
+        this.$start.addClass('select');
+    }
+
+    /**
+     * 選択されたすべての行の href を更新します
+     */
+    private fillHref(): void {
+        let top = -1, bottom = -1;
+        this.$parent.find('s.select')
+            .each(function() {
+                const pos = $(this).data('pos');
+                if(top === -1 || top > pos) {
+                    top = pos;
+                }
+                if(bottom === -1 || pos > bottom) {
+                    bottom = pos;
+                }
+            })
+            .children('a')
+            .prop('href', `#/$/file${this.path}#B${top}-${bottom}`);
+    }
+}
+
+
 /**
  * FileRenderer の表示モデル
  */
@@ -76,9 +205,6 @@ export default class FileRendererViewModel {
     /** 表示される最大行数 */
     private static readonly bufferLines =
         process.env.NODE_ENV === 'development' ? 300 : 2000;
-
-    /** 1行の高さ */
-    private static readonly lineHeight = 16;
 
     /** ProcedureApi クライアント */
     private readonly client: ProcedureApiClient<StartMode>;
@@ -133,6 +259,12 @@ export default class FileRendererViewModel {
             .on('mouseleave', 'a', e => {
                 $(e.target).closest('s').removeClass('hover');
             })
+            .on('mousedown', 'a', e => {
+                if(e.button !== 0 || e.shiftKey || e.metaKey) {
+                    return;
+                }
+                return new OnSelectionHandleMouseDown(e, this.client.lastParam('path'));
+            })
             .on('dragstart', 'a', () => false);
     }
 
@@ -161,7 +293,7 @@ export default class FileRendererViewModel {
             skipLines: 0,
             follow: true
         }, params), {
-            scroll: "bottom"
+            scroll: "top"
         });
     }
 
@@ -354,6 +486,7 @@ export default class FileRendererViewModel {
             start: -1, end: -1
         }, startMode.emphasisRange);
         let childCount = this.$contents.children().length;
+        const path = this.client.lastParam('path').toString();
         const scrollTop = this.$logs.prop('scrollTop');
         let scrollDy = 0;
         for(let message of messages) {
@@ -364,15 +497,17 @@ export default class FileRendererViewModel {
 
             if('str' in message) {
                 const line = message as Line;
+                const href = `#/$/file${path}#B${line.pos}`;
                 const $line = $('<s><a></a><b></b></s>')
                     .find('b')
                     .text(line.str)
                     .end()
                     .find('a')
-                    .prop('href', `#/$/file${this.client.lastParam('path')}#B${line.pos}`)
+                    .prop('href', href)
                     .end()
                     .toggleClass('emphasis', emRange.start <= line.pos && line.pos <= emRange.end)
                     .data({
+                        href,
                         pos: line.pos,
                         len: line.len
                     });
@@ -385,14 +520,14 @@ export default class FileRendererViewModel {
                 // 配置
                 childCount++;
                 if (this.client.lastParam('direction') === 'forward') {
-                    scrollDy -= FileRendererViewModel.lineHeight;
+                    scrollDy -= LINE_HEIGHT;
                     this.$contents.append($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:first').remove();
                         childCount--;
                     }
                 } else {
-                    scrollDy += FileRendererViewModel.lineHeight;
+                    scrollDy += LINE_HEIGHT;
                     this.$contents.prepend($line);
                     if (childCount > FileRendererViewModel.bufferLines) {
                         this.$contents.children('*:last').remove();

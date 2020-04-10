@@ -204,7 +204,7 @@
         font-family: monospace;
         white-space: pre;
         text-decoration: none;
-        padding: 0 10px 0 0;
+        padding: 0;
     }
 
     .logs >>> a {
@@ -236,12 +236,18 @@
         background-color: rgba(252, 244, 161, 0.48);
     }
 
-    .logs .contents >>> s.hover b {
-        background-color: rgba(160, 250, 160, 0.3);
+    .logs .contents >>> s.hover {
+        background-color: rgba(255, 245, 167, 0.4);
     }
 
-    .logs .contents >>> s.hover a {
-        background-color: rgba(160, 250, 160, 0.8);
+    .logs .contents >>> s.select a {
+        background-color: rgba(255, 245, 167, 0.8);
+        position: relative;
+        z-index: 10;
+    }
+
+    .logs .contents >>> s.select b {
+        background-color: rgba(255, 245, 167, 0.3);
     }
 
     .logs .contents >>> s.error {
