@@ -237,7 +237,7 @@
     }
 
     .logs .contents >>> s.hover {
-        background-color: rgba(255, 245, 167, 0.4);
+        background-color: rgba(168, 255, 168, 0.33);
     }
 
     .logs .contents >>> s.select a {

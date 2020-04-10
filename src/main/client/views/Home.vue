@@ -31,6 +31,19 @@ export default {
       return Path.of(this.$route.path).normalize();
     }
   },
+  watch: {
+    '$route': {
+      handler: function() {
+        const file = this.$route.query.file;
+        if(file) {
+          this.$nextTick(() => {
+            this.onSelectResource(Path.of(file).normalize());
+          });
+        }
+      },
+      immediate: true
+    }
+  },
   methods: {
     onSelectResource: function(selectedPath) {
       this.$refs.fileViewer.$emit('show-tail', selectedPath);

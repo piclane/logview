@@ -1,6 +1,16 @@
 <template>
     <div class="file-viewer">
         <div class="toolbar">
+            <el-tooltip
+                effect="dark"
+                content="Back"
+                v-show="$route.name === 'File'">
+                <el-button
+                    type="text"
+                    size="mini"
+                    icon="el-icon-back"
+                    @click="doBack"/>
+            </el-tooltip>
             <i class="el-icon-document"></i>
             <span class="path">{{ path.toString().trim() }}</span>
             <div class="space"></div>
@@ -72,13 +82,14 @@
 <script>
     import FileRenderer from "@/components/FileRenderer.vue";
     import {downloadFile} from "@/utils/api/FileApiClient";
+    import Path from "@/utils/Path";
 
     export default {
         name: 'file-viewer',
         components: {FileRenderer},
         data() {
             return {
-                path: '',
+                path: Path.empty(),
                 search: '',
                 searching: false,
                 searchSmart: true,
@@ -108,6 +119,14 @@
             });
         },
         methods: {
+            doBack: function() {
+                this.$router.push({
+                    path: this.path.parent().toString(),
+                    query: {
+                        file: this.path.toString()
+                    }
+                });
+            },
             toggleScrollLock: function() {
                 this.scrollLock = !this.scrollLock;
             },
