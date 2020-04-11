@@ -4,8 +4,10 @@ import Path from "@/utils/Path";
 import {Vue} from "vue/types/vue";
 import {Line, Message, ProcedureApiClient, Signal, StartParam} from "@/utils/api/ProcedureApiClient";
 import Marker from "@/utils/Marker";
+import Range from "@/utils/Range";
 import MouseMoveEvent = JQuery.MouseMoveEvent;
 import MouseDownEvent = JQuery.MouseDownEvent;
+import EventEmitter from "eventemitter3";
 
 
 /**
@@ -26,21 +28,6 @@ interface ComponentData {
 
     /** ロード中の場合 true そうでない場合 false */
     loading: boolean;
-}
-
-/**
- * 範囲
- */
-interface Range {
-    /**
-     * 開始位置 (この位置を含む)
-     */
-    start: number;
-
-    /**
-     * 終了位置 (この位置を含む)
-     */
-    end: number;
 }
 
 /**
@@ -69,6 +56,13 @@ interface StartMode {
      * 強調表示するマーカー
      */
     emphasisMarker?: Marker;
+}
+
+/**
+ * イベント名称とイベント型
+ */
+interface FileRendererViewModelMap {
+    "rangeChanged": Range;
 }
 
 /** 1行の高さ */
@@ -146,8 +140,7 @@ class OnSelectionHandleMouseDown {
             }
         }
 
-        this.fillHref();
-
+        this.fillHref(true);
         this.lastDistance = distance;
     }
 
@@ -156,10 +149,11 @@ class OnSelectionHandleMouseDown {
      */
     private onMouseUp(): void {
         if(this.stable) {
-            this.clearSelection();
-            this.stable = false;
+            const rangeChanged = this.clearSelection();
+            this.fillHref(rangeChanged);
+        } else {
+            this.fillHref(false);
         }
-        this.fillHref();
         $(document.body)
             .off('mousemove')
             .off('mouseup');
@@ -167,33 +161,46 @@ class OnSelectionHandleMouseDown {
 
     /**
      * 最初に選択された行を除いて、選択をすべて解除します
+     *
+     * @return 選択範囲に変更がある場合 true そうでない場合 false
      */
-    private clearSelection(): void {
-        this.$parent.find('s.select')
+    private clearSelection(): boolean {
+        const $current = this.$parent.find('s.select');
+        if($current.length === 1 && $current.data('pos') === this.$start.data('pos')) {
+            return false;
+        }
+        $current
             .children('a')
             .prop('href', function() { return $(this).data('href'); })
             .end()
             .removeClass('select');
         this.$start.addClass('select');
+        return true;
     }
 
     /**
      * 選択されたすべての行の href を更新します
+     *
+     * @param rangeChanged 選択範囲に変更がある場合 true そうでない場合 false
      */
-    private fillHref(): void {
-        let top = -1, bottom = -1;
+    private fillHref(rangeChanged: boolean): void {
+        let top = NaN, bottom = NaN;
         this.$parent.find('s.select')
             .each(function() {
                 const pos = $(this).data('pos');
-                if(top === -1 || top > pos) {
+                if(isNaN(top) || top > pos) {
                     top = pos;
                 }
-                if(bottom === -1 || pos > bottom) {
+                if(isNaN(bottom) || pos > bottom) {
                     bottom = pos;
                 }
             })
             .children('a')
             .prop('href', `#/$/file${this.path}#B${top}-${bottom}`);
+
+        if(rangeChanged) {
+            this.$parent.triggerHandler('rangeChanged', [Range.of(top, bottom)]);
+        }
     }
 }
 
@@ -205,6 +212,9 @@ export default class FileRendererViewModel {
     /** 表示される最大行数 */
     private static readonly bufferLines =
         process.env.NODE_ENV === 'development' ? 300 : 2000;
+
+    /** イベント発火するやつ */
+    private readonly emitter = new EventEmitter();
 
     /** ProcedureApi クライアント */
     private readonly client: ProcedureApiClient<StartMode>;
@@ -265,7 +275,10 @@ export default class FileRendererViewModel {
                 }
                 return new OnSelectionHandleMouseDown(e, this.client.lastParam('path'));
             })
-            .on('dragstart', 'a', () => false);
+            .on('dragstart', 'a', () => false)
+            .on('rangeChanged', (e, range: Range) => {
+                this.dispatchEvent('rangeChanged', range);
+            });
     }
 
     /**
@@ -449,6 +462,36 @@ export default class FileRendererViewModel {
     }
 
     /**
+     * イベントを追加します
+     *
+     * @param type イベント名
+     * @param listener イベントリスナー
+     */
+    public addEventListener<K extends keyof FileRendererViewModelMap>(type: K, listener: (this: FileRendererViewModel, e: FileRendererViewModelMap[K]) => any): void {
+        this.emitter.addListener(type, listener, this);
+    }
+
+    /**
+     * イベントを削除します
+     *
+     * @param type イベント名
+     * @param listener イベントリスナー
+     */
+    public removeEventListener<K extends keyof FileRendererViewModelMap>(type: K, listener: (this: FileRendererViewModel, e: FileRendererViewModelMap[K]) => any): void {
+        this.emitter.removeListener(type, listener, this);
+    }
+
+    /**
+     * イベントを発火します
+     *
+     * @param type イベント名
+     * @param args イベント
+     */
+    private dispatchEvent(type: string, ...args: any[]): boolean {
+        return this.emitter.emit.apply(this.emitter, [type].concat(args) as [string, ...any[]]);
+    }
+
+    /**
      * WebSocker の close イベント受信時に呼び出されます
      *
      * @param e CloseEvent
@@ -482,10 +525,8 @@ export default class FileRendererViewModel {
      * @param startMode 開始モード
      */
     protected receiveMessage(messages: Message[], startMode: StartMode): void {
-        const emRange = Object.assign({
-            start: -1, end: -1
-        }, startMode.emphasisRange);
         let childCount = this.$contents.children().length;
+        const emRange = Range.safe(startMode.emphasisRange);
         const path = this.client.lastParam('path').toString();
         const scrollTop = this.$logs.prop('scrollTop');
         let scrollDy = 0;
@@ -505,7 +546,7 @@ export default class FileRendererViewModel {
                     .find('a')
                     .prop('href', href)
                     .end()
-                    .toggleClass('emphasis', emRange.start <= line.pos && line.pos <= emRange.end)
+                    .toggleClass('select', emRange.contains(line.pos))
                     .data({
                         href,
                         pos: line.pos,
@@ -576,7 +617,7 @@ export default class FileRendererViewModel {
                 break;
             case 'eor':
                 if(startMode.emphasisRange !== null) {
-                    const $em = this.$contents.find('.emphasis:first');
+                    const $em = this.$contents.find('.select:first');
                     if($em.length) {
                         const height = this.$logs.innerHeight() as number;
                         this.$logs.scrollTop($em.position().top - height / 4);

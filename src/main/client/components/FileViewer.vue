@@ -83,6 +83,7 @@
     import FileRenderer from "@/components/FileRenderer.vue";
     import {downloadFile} from "@/utils/api/FileApiClient";
     import Path from "@/utils/Path";
+    import Range from "@/utils/Range";
 
     export default {
         name: 'file-viewer',
@@ -123,7 +124,8 @@
                 this.$router.push({
                     path: this.path.parent().toString(),
                     query: {
-                        file: this.path.toString()
+                        file: this.path.toString(),
+                        range: Range.parse(this.$route.hash).toString()
                     }
                 });
             },

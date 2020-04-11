@@ -5,7 +5,7 @@
     </el-header>
     <el-main>
       <multipane>
-        <file-table @select-resource="onSelectResource" :current-path="currentPath" />
+        <file-table @select-resource="showTail" :current-path="currentPath" />
         <multipane-resizer></multipane-resizer>
         <file-viewer ref="fileViewer"></file-viewer>
       </multipane>
@@ -19,6 +19,7 @@ import FileTable from '@/components/FileTable.vue';
 import FileViewer from '@/components/FileViewer.vue';
 import { Multipane, MultipaneResizer } from 'vue-multipane';
 import Path from "@/utils/Path";
+import Range from "@/utils/Range";
 
 export default {
   data: function() {
@@ -36,17 +37,27 @@ export default {
       handler: function() {
         const file = this.$route.query.file;
         if(file) {
+          const path = Path.of(file).normalize();
+          const range = Range.parse(this.$route.query.range);
           this.$nextTick(() => {
-            this.onSelectResource(Path.of(file).normalize());
+            if(range.isValid) {
+              this.showThere(path, range);
+            } else {
+              this.showTail(path);
+            }
           });
+          this.$router.replace({path: this.$route.path});
         }
       },
       immediate: true
     }
   },
   methods: {
-    onSelectResource: function(selectedPath) {
-      this.$refs.fileViewer.$emit('show-tail', selectedPath);
+    showTail: function(path) {
+      this.$refs.fileViewer.$emit('show-tail', path);
+    },
+    showThere: function(path, range) {
+      this.$refs.fileViewer.$emit('show-there', path, range);
     }
   },
   components: {

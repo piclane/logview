@@ -58,7 +58,6 @@
                 required: false,
                 default: false
             },
-
         },
         created() {
             this.$on('show-tail', path => {
@@ -102,6 +101,11 @@
         },
         mounted() {
             this.renderer = new FileRendererViewModel(this);
+            if(this.$route.name === 'File') {
+                this.renderer.addEventListener('rangeChanged', range => {
+                    this.$router.push(`#${range.toString()}`);
+                });
+            }
         },
         destroyed() {
             this.renderer.destroy();
@@ -230,10 +234,6 @@
         background-color: rgba(252, 244, 161, 0.48);
         font-weight: bold;
         font-style: inherit;
-    }
-
-    .logs .contents >>> s.emphasis {
-        background-color: rgba(252, 244, 161, 0.48);
     }
 
     .logs .contents >>> s.hover {

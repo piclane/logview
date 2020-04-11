@@ -9,6 +9,7 @@ import me.piclane.util.LongEqualTo;
 import me.piclane.util.MessageConsumableWriter;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -25,17 +26,17 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.equalTo;
-import static org.powermock.api.mockito.PowerMockito.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
+import static org.powermock.api.mockito.PowerMockito.mock;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Session.class, RemoteEndpoint.Basic.class})
-public class ReaderTest {
+@Ignore
+public class PlainSearchTest {
     /** Test FileSystem */
     private FileSystem testFs;
 
@@ -69,6 +70,7 @@ public class ReaderTest {
         AtomicInteger pos = new AtomicInteger();
         expectLines = Files.lines(testPath)
                 .map(str ->  new Line(pos.getAndAdd(str.length() + 1), str.length() + 1, str))
+                .filter(line -> line.str.contains("1"))
                 .collect(Collectors.toList());
     }
 
@@ -78,7 +80,7 @@ public class ReaderTest {
     }
 
     @Test
-    public void testReadForward() throws Exception {
+    public void testForward() throws Exception {
         MessageConsumableWriter writer = new MessageConsumableWriter();
 
         RemoteEndpoint.Basic endpoint = mock(RemoteEndpoint.Basic.class);
@@ -96,13 +98,14 @@ public class ReaderTest {
             param.setPath(this.testPath);
             param.setStatus(Status.start);
             param.setDirection(Direction.forward);
-            param.setLines(200);
+            param.setLines(100);
             param.setOffsetBytes(0);
             param.setOffsetStart(OffsetStart.head);
             param.setSkipLines(0);
             param.setFollow(true);
+            param.setSearch(new String[] { "1" });
 
-            t = new Thread(new Reader(session, param));
+            t = new Thread(new PlainSearch(session, param));
             t.start();
 
             // file length
@@ -126,7 +129,7 @@ public class ReaderTest {
                 assertThat(m, hasEntry(equalTo("pos"), new LongEqualTo(expectedLine.pos)));
                 assertThat(m, hasEntry(equalTo("len"), new LongEqualTo(expectedLine.len)));
                 assertThat(m, hasEntry(equalTo("str"), equalTo(expectedLine.str)));
-                return 199 != line;
+                return 100 != line;
             });
 
             // end of requested signal
@@ -151,7 +154,7 @@ public class ReaderTest {
             param.setSkipLines(0);
             param.setFollow(true);
 
-            t = new Thread(new Reader(session, param));
+            t = new Thread(new PlainSearch(session, param));
             t.start();
 
             // file length
@@ -242,7 +245,7 @@ public class ReaderTest {
             param.setSkipLines(0);
             param.setFollow(true);
 
-            t = new Thread(new Reader(session, param));
+            t = new Thread(new PlainSearch(session, param));
             t.start();
 
             // file length
@@ -285,7 +288,7 @@ public class ReaderTest {
             param.setSkipLines(0);
             param.setFollow(true);
 
-            t = new Thread(new Reader(session, param));
+            t = new Thread(new PlainSearch(session, param));
             t.start();
 
             // file length
