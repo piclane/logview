@@ -25,6 +25,13 @@ dependencies {
     compileOnly "javax.websocket:javax.websocket-api:1.1"
     compileOnly "javax.servlet:javax.servlet-api:3.1.0"
 
+    if(project.properties.containsKey("jdk11")) {
+        implementation "javax.xml.bind:jaxb-api:2.3.1"
+        implementation "com.sun.xml.bind:jaxb-impl:2.3.0.1"
+        implementation "com.sun.xml.bind:jaxb-core:2.3.0.1"
+        implementation "javax.activation:javax.activation-api:1.2.0"
+    }
+
     implementation "org.slf4j:slf4j-api:1.7.30"
     implementation "org.slf4j:jul-to-slf4j:1.7.30"
     implementation "ch.qos.logback:logback-core:1.2.3"
@@ -81,7 +88,8 @@ task buildWeb() {
 war {
     def branchName = readBranch()
     switch (branchName) {
-        case { isIdea() }:
+        case { System.getProperty("idea.active", "false") == "true" }:
+        case { project.properties.containsKey("docker.build") }:
             archiveName = "${project.name}.war"
             break
         case 'master':
@@ -118,13 +126,4 @@ static def readBranch() {
             .trim()
             .replaceAll(/remotes\/origin\//, "")
             .replaceAll(/\^0$/, "")
-}
-
-/**
- * IntelliJ からの実行かどうかを取得します
- *
- * @return IntelliJ からの実行の場合 true そうでない場合 false
- */
-static def isIdea() {
-    return System.getProperty("idea.active", "false") == "true"
 }

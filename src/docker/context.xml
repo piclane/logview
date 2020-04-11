@@ -1,0 +1,14 @@
+<Context>
+    <!--
+        Root Directory
+    -->
+    <Environment name="app/logview/rootDir" value="/var/lib/logview" type="java.lang.String" />
+
+    <!--
+        HTML to add to the header
+
+        You can also use environment variables in value, like $HOME or ${HOME} or ${FOO:-/path/to} or ${BAR:+/path/to}
+        If you want to read file, write like @/path/to/file, ${@/path/to/file}, ${@/path/to/file:-value},
+    -->
+    <Environment name="app/logview/header" value="" type="java.lang.String" />
+</Context>
