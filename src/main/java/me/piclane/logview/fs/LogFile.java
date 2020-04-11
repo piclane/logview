@@ -20,13 +20,20 @@ public class LogFile {
      *
      * @param path パス
      * @return 生成された {@link LogFile}
-     * @throws IOException 入出力例外が発生した場合
      */
-    public static LogFile from(Path path) throws IOException {
+    public static LogFile from(Path path) {
         LogFile r = new LogFile();
         r.setName(path.getFileName().toString());
-        r.setSize(Files.size(path));
-        r.setLastModified(Files.getLastModifiedTime(path).toMillis());
+        try {
+            r.setSize(Files.size(path));
+        } catch(IOException e) {
+            r.setSize(-1L);
+        }
+        try {
+            r.setLastModified(Files.getLastModifiedTime(path).toMillis());
+        } catch(IOException e) {
+            r.setLastModified(-1L);
+        }
         r.setType(Files.isDirectory(path) ? LogFile.FileType.dir : LogFile.FileType.file);
         r.setReadable(Files.isReadable(path));
 
