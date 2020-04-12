@@ -13,6 +13,8 @@ import java.util.List;
 
 /**
  * ふつうの読込
+ *
+ * @author yohei_hina
  */
 class Reader implements Runnable {
     /** 一度に送信する行数 */

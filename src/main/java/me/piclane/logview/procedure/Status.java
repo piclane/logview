@@ -2,6 +2,8 @@ package me.piclane.logview.procedure;
 
 /**
  * ステータス
+ *
+ * @author yohei_hina
  */
 public enum Status {
     /** 開始 */

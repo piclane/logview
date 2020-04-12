@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
 
 /**
  * かしこい検索
+ *
+ * @author yohei_hina
  */
 class SmartSearch implements Runnable {
     /** グループの先頭行パターン */

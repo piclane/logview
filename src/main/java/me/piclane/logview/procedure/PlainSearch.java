@@ -13,6 +13,8 @@ import java.util.List;
 
 /**
  * ふつうの検索
+ *
+ * @author yohei_hina
  */
 class PlainSearch implements Runnable {
     /** {@link Session} */

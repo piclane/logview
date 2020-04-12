@@ -6,6 +6,8 @@ import javax.ws.rs.ApplicationPath;
 
 /**
  * アプリケーション設定
+ *
+ * @author yohei_hina
  */
 @ApplicationPath("/api")
 public class ApplicationConfig extends ResourceConfig {

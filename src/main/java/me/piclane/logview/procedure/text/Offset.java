@@ -7,6 +7,8 @@ import java.util.List;
 
 /**
  * オフセット
+ *
+ * @author yohei_hina
  */
 public class Offset {
     /** ブロックサイズ */

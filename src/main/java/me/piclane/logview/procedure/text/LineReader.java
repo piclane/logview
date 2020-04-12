@@ -9,6 +9,8 @@ import java.util.LinkedList;
 
 /**
  * Line リーダー
+ *
+ * @author yohei_hina
  */
 public class LineReader implements AutoCloseable {
     /** 行バッファ */

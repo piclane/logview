@@ -9,6 +9,8 @@ import java.nio.file.Path;
 
 /**
  * {@link SeekableByteChannel} から 1 バイトずつ読み込むクラス
+ *
+ * @author yohei_hina
  */
 public class BufferedByteReader implements AutoCloseable {
     /** デフォルトバッファサイズ */

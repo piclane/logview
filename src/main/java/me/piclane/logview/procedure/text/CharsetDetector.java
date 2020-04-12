@@ -13,6 +13,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Class to detect the charset
+ *
+ * @author yohei_hina
+ */
 public class CharsetDetector {
     /** MS932 文字セット */
     private static final Charset CHARSET_MS932 = Charset.forName("windows-31j");

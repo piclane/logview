@@ -2,6 +2,8 @@ package me.piclane.logview.procedure.text;
 
 /**
  * 読込の開始位置のモード
+ *
+ * @author yohei_hina
  */
 public enum OffsetStart {
     /** 指定されたオフセットがファイル先頭からの相対位置になる */
