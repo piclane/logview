@@ -23,3 +23,35 @@ i.icon-searching {
     vertical-align: bottom;
     margin: 0 3px;
 }
+
+i.icon-folder {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("../assets/folder-blue.svg");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: bottom;
+    margin: 0 3px;
+}
+
+i.icon-folder.gray {
+    background-image: url("../assets/folder-gray.svg");
+}
+
+i.icon-document {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("../assets/document-blue.svg");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: bottom;
+    margin: 0 3px;
+}
+
+i.icon-document.gray {
+    background-image: url("../assets/document-gray.svg");
+}

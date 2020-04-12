@@ -50,20 +50,25 @@ export class FileTableRenderers extends Vue {
                 },
                 data = {class: clazz, attrs, domProps, on: {click: (e: MouseEvent) => { this.$emit('clickLink', e); }}},
                 iconClazz = {
-                    'el-icon-document': false,
-                    'el-icon-folder': false
+                    'icon-document': false,
+                    'icon-folder': false,
+                    'gray': !record.readable
                 };
             switch(record.type) {
                 case 'file':
                     attrs.href = '#/$/file' + domProps.resource;
                     clazz.file = true;
-                    iconClazz['el-icon-document'] = true;
+                    iconClazz['icon-document'] = true;
                     break;
                 case 'dir':
                     attrs.href = '#' + domProps.resource;
                     clazz.dir = true;
-                    iconClazz['el-icon-folder'] = true;
+                    iconClazz['icon-folder'] = true;
                     break;
+            }
+            if(!record.readable) {
+                delete data.attrs.href;
+                delete data.on.click;
             }
             const h = this.$createElement;
             return h('a', data, [

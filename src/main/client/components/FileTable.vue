@@ -30,14 +30,14 @@
                 fixed-header="true">
             <el-table-column
                     sortable="true"
-                    width="150"
+                    width="160"
                     fixed="left"
                     :formatter="renderCell"
                     prop="name"
                     label="Filename" />
             <el-table-column
                     sortable="true"
-                    width="150"
+                    width="140"
                     :formatter="renderCell"
                     prop="lastModified"
                     label="Last Modified" />
@@ -241,11 +241,15 @@
         color: mediumblue;
     }
 
+    a.logfile.unreadable {
+        text-decoration: line-through;
+    }
+
     a.logfile i {
-        font-size: 13px;
-        margin-right: 5px;
+        margin-right: 7px;
         vertical-align: middle;
-        color: midnightblue;
+        position: relative;
+        top: -2px;
     }
 
     .toolbar {
