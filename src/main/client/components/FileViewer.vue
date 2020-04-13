@@ -102,6 +102,7 @@
                 this.path = path;
                 this.search = '';
                 this.searching = false;
+                this.scrollLock = false;
                 this.$refs.fileRenderer.$emit('show-tail', path);
             });
 
@@ -109,6 +110,7 @@
                 this.path = path;
                 this.search = '';
                 this.searching = false;
+                this.scrollLock = false;
                 this.$refs.fileRenderer.$emit('show-head', path);
             });
 
@@ -116,6 +118,7 @@
                 this.path = path;
                 this.search = '';
                 this.searching = false;
+                this.scrollLock = true;
                 this.$refs.fileRenderer.$emit('show-there', path, range);
             });
         },

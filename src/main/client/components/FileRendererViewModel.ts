@@ -326,12 +326,18 @@ export default class FileRendererViewModel {
             offsetStart: 'tail',
             offsetBytes: 0,
             skipLines: -FileRendererViewModel.bufferLines,
-            follow: false
+            follow: true
         }, params), {
             scroll: "bottom"
         });
     }
 
+    /**
+     * 指定された範囲を中心に前後を表示します
+     *
+     * @param path ファイルパス
+     * @param range 範囲
+     */
     public openThere(path: Path, range: Range): void {
         this.data.loading = true;
         this.client.sendStopAndStart({
@@ -342,7 +348,7 @@ export default class FileRendererViewModel {
             offsetStart: 'head',
             offsetBytes: range.start,
             skipLines: -Math.floor(FileRendererViewModel.bufferLines / 2),
-            follow: true
+            follow: false
         }, {
             scroll: "bottom",
             emphasisRange: range
