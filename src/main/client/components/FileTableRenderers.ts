@@ -53,15 +53,16 @@ export class FileTableRenderers extends Vue {
                     'icon-document': false,
                     'icon-folder': false,
                     'gray': !record.readable
-                };
+                },
+                baseUrl = process.env.BASE_URL.replace(/\/$/, '');
             switch(record.type) {
                 case 'file':
-                    attrs.href = '#/$/file' + domProps.resource;
+                    attrs.href = `${baseUrl}/$${domProps.resource}`;
                     clazz.file = true;
                     iconClazz['icon-document'] = true;
                     break;
                 case 'dir':
-                    attrs.href = '#' + domProps.resource;
+                    attrs.href = `${baseUrl}/@${domProps.resource}`;
                     clazz.dir = true;
                     iconClazz['icon-folder'] = true;
                     break;

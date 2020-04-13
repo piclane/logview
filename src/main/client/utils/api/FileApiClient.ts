@@ -27,5 +27,5 @@ export function downloadFile(path: Path): void {
             .appendTo('body');
     }
 
-    window.open('api/file/download?path=' + encodeURIComponent(path.toString()), 'download');
+    window.open(process.env.BASE_URL + 'api/file/download?path=' + encodeURIComponent(path.toString()), 'download');
 }

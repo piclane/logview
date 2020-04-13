@@ -22,6 +22,13 @@ export default class Path implements Iterable<string> {
     }
 
     /**
+     * ルートの Path を取得します
+     */
+    public static root(): Path {
+        return Path.ROOT_PATH;
+    }
+
+    /**
      * パスを表現する文字列から Path を生成します
      *
      * @param path パスを表現する文字列
@@ -89,11 +96,54 @@ export default class Path implements Iterable<string> {
      *
      * @param other この Path に対して解決するパス
      */
-    public resolve(other: Path): Path {
+    public resolve(other: Path | string): Path {
+        if(typeof other === 'string') {
+            other = Path.of(other);
+        }
         if(other.isAbsolute) {
             return other;
         }
         return new Path(this.components.concat(other.components), this.isAbsolute);
+    }
+
+    /**
+     * このパスと指定されたパスとの間の相対パスを構築します
+     *
+     * @param other このパスに対して相対化するパス
+     */
+    public relativize(other: Path | string): Path {
+        if(typeof other === 'string') {
+            other = Path.of(other);
+        }
+        if(this === other) {
+            return Path.EMPTY_PATH;
+        }
+        if(this.isEmpty) {
+            return other;
+        }
+
+        const otherComponents = other.components;
+        let sharedSubsequenceLength = 0;
+        for(let i=0; i<Math.min(this.components.length, otherComponents.length); i++) {
+            if(this.components[i] === otherComponents[i]) {
+                sharedSubsequenceLength++;
+            } else {
+                break;
+            }
+        }
+
+        const extraNamesInThis = Math.max(0, this.components.length - sharedSubsequenceLength);
+        const extraNamesInOther = (otherComponents.length <= sharedSubsequenceLength)
+            ? [] : otherComponents.slice(sharedSubsequenceLength, otherComponents.length);
+
+        const parts = [];
+        for(let i=0; i<extraNamesInThis; i++) {
+            parts.push('..');
+        }
+        for(let i=0; i<extraNamesInOther.length; i++) {
+            parts.push(extraNamesInOther[i]);
+        }
+        return new Path(parts, false);
     }
 
     /**

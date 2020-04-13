@@ -118,16 +118,20 @@
              */
             onClickLink: function(event) {
                 const el = event.currentTarget;
-                if(el.classList.contains('dir')) { // ディレクトリの場合
+                if(event.shiftKey || event.metaKey) { // 新規タブ・新規ウィンドウで開く場合
+                    // nop
+                } else if(el.classList.contains('dir')) { // ディレクトリの場合
+                    const resource = el.resource;
                     this.rows = [];
-                    return;
-                } else if(event.shiftKey || event.metaKey) { // 新規タブ・新規ウィンドウで開く場合
-                    return;
+                    this.$router.push(`/@${resource}`);
+                    event.stopPropagation();
+                    event.preventDefault();
+                } else  { // ファイルの場合
+                    const resource = el.resource;
+                    this.$emit('select-resource', resource);
+                    event.stopPropagation();
+                    event.preventDefault();
                 }
-                const resource = el.resource;
-                this.$emit('select-resource', resource);
-                event.stopPropagation();
-                event.preventDefault();
             },
 
             onChangeSort: function(e) {

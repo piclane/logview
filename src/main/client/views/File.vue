@@ -17,7 +17,7 @@
         },
         computed: {
             currentPath: function() {
-                return Path.of('/' + this.$route.params._path).normalize();
+                return Path.root().resolve(this.$route.params._path).normalize();
             },
             currentRange: function() {
                 return Range.parse(this.$route.hash);

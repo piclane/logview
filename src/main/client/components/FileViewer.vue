@@ -125,7 +125,7 @@
         methods: {
             doBack: function() {
                 this.$router.push({
-                    path: this.path.parent().toString(),
+                    path: `/@${this.path.parent()}`,
                     query: {
                         file: this.path.toString(),
                         range: Range.parse(this.$route.hash).toString()

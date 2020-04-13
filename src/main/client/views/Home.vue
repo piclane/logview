@@ -29,7 +29,7 @@ export default {
   },
   computed: {
     currentPath: function() {
-      return Path.of(this.$route.path).normalize();
+      return Path.root().resolve(this.$route.params._path).normalize();
     }
   },
   watch: {

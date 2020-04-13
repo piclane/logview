@@ -36,7 +36,7 @@ export interface File {
  * @param path パス
  */
 export function listDir(path: Path): Promise<File[]> {
-    return axios.post('api/dir/list', new URLSearchParams({
+    return axios.post(process.env.BASE_URL + 'api/dir/list', new URLSearchParams({
         path: path.toString()
     })).then(resp => {
         return resp.data as File[];

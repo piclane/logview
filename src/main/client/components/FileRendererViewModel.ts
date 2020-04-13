@@ -184,6 +184,7 @@ class OnSelectionHandleMouseDown {
      * @param rangeChanged 選択範囲に変更がある場合 true そうでない場合 false
      */
     private fillHref(rangeChanged: boolean): void {
+        const baseUrl = process.env.BASE_URL;
         let top = NaN, bottom = NaN;
         this.$parent.find('s.select')
             .each(function() {
@@ -196,7 +197,7 @@ class OnSelectionHandleMouseDown {
                 }
             })
             .children('a')
-            .prop('href', `#/$/file${this.path}#B${top}-${bottom}`);
+            .prop('href', `${baseUrl}$${this.path}#B${top}-${bottom}`);
 
         if(rangeChanged) {
             this.$parent.triggerHandler('rangeChanged', [Range.of(top, bottom)]);
@@ -535,6 +536,7 @@ export default class FileRendererViewModel {
         const emRange = Range.safe(startMode.emphasisRange);
         const path = this.client.lastParam('path').toString();
         const scrollTop = this.$logs.prop('scrollTop');
+        const baseUrl = process.env.BASE_URL;
         let scrollDy = 0;
         for(let message of messages) {
             if('signal' in message) {
@@ -544,7 +546,7 @@ export default class FileRendererViewModel {
 
             if('str' in message) {
                 const line = message as Line;
-                const href = `#/$/file${path}#B${line.pos}`;
+                const href = `${baseUrl}$${path}#B${line.pos}`;
                 const $line = $('<s><a></a><b></b></s>')
                     .find('b')
                     .text(line.str)

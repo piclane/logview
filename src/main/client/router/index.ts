@@ -6,16 +6,21 @@ import File from '../views/File.vue'
 Vue.use(VueRouter);
 
 const router = new VueRouter({
+  base: process.env.BASE_URL,
+  mode: 'history',
   routes: [{
-    path: '/$/file/:_path(.*)',
+    path: '/$/:_path(.*)',
     name: 'File',
     component: File,
     props: true
   }, {
-    path: '/*',
+    path: '/@/:_path(.*)',
     name: 'Home',
     component: Home,
     props: true
+  }, {
+    path: '/*',
+    redirect: '/@/'
   }]
 });
 
