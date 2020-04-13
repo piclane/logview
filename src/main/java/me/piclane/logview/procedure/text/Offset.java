@@ -65,7 +65,7 @@ public class Offset {
                 } while (currentPos < posBlockEnd);
 
                 // 指定された行の開始位置を返して終了
-                if (currentTailLineCount + positions.size() >= skipLines) {
+                if (currentTailLineCount + positions.size() > skipLines) {
                     return new Offset(length, positions.get(positions.size() - skipLines + currentTailLineCount - 1));
                 }
 
