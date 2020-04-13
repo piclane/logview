@@ -2,6 +2,8 @@ package me.piclane.logview.procedure;
 
 import me.piclane.logview.procedure.text.*;
 import me.piclane.logview.util.Json;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.websocket.Session;
 import java.io.IOException;
@@ -17,6 +19,9 @@ import java.util.List;
  * @author yohei_hina
  */
 class PlainSearch implements Runnable {
+    /** logger */
+    private static final Logger logger = LoggerFactory.getLogger(PlainSearch.class);
+
     /** {@link Session} */
     private final Session session;
 
@@ -131,6 +136,8 @@ class PlainSearch implements Runnable {
             }
         } catch (IOException | InterruptedException e) {
             // return
+        } catch (Exception e) {
+            logger.error("An error has occurred.", e);
         } finally {
             currentThread.setName(oldName);
         }

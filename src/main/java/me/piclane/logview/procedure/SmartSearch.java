@@ -2,6 +2,8 @@ package me.piclane.logview.procedure;
 
 import me.piclane.logview.procedure.text.*;
 import me.piclane.logview.util.Json;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.websocket.Session;
 import java.io.IOException;
@@ -19,6 +21,9 @@ import java.util.regex.Pattern;
  * @author yohei_hina
  */
 class SmartSearch implements Runnable {
+    /** logger */
+    private static final Logger logger = LoggerFactory.getLogger(SmartSearch.class);
+
     /** グループの先頭行パターン */
     private static final Pattern GROUP_START_PATTERN = Pattern.compile("^(" +
             // よくある「ログレベル+日付」形式
@@ -196,6 +201,8 @@ class SmartSearch implements Runnable {
             }
         } catch (IOException | InterruptedException e) {
             // return
+        } catch (Exception e) {
+            logger.error("An error has occurred.", e);
         } finally {
             currentThread.setName(oldName);
         }
