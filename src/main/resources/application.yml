@@ -1,0 +1,5 @@
+app:
+  fs:
+    root: ${HOME}
+    dirs:
+      log: /var/log
