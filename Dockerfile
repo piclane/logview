@@ -6,20 +6,14 @@ RUN apt-get -y update && \
     n stable && \
     apt purge -y nodejs npm
 
-ADD ./ /logview/
-ADD ./src/docker/context.xml /logview/web/META-INF/context.xml
+ADD ./ /app/
 
-RUN cd /logview && \
-    npm install && \
-    ./gradlew war -Pdocker.build -Pjdk11
+WORKDIR /app/
+ENV JVM_OPTS="-Xmx2048m"
+RUN ./gradlew --no-daemon bootJar --info
 
-FROM tomcat:9-jdk11-openjdk-slim
-
-COPY --from=build /logview/build/libs/logview.war /usr/local/tomcat/webapps/
-
-RUN mkdir -p /var/lib/logview
-
-# VOLUME /var/lib/logview
-
-EXPOSE 8080
-CMD ["catalina.sh", "run"]
+FROM openjdk:11-jdk-slim
+COPY --from=build /app/build/libs/logview*.jar /app/
+RUN mkdir /app/mnt ; echo "app.fs.root=/app/mnt/" > /app/application.properties
+WORKDIR /app/
+CMD ["sh", "-c", "java -jar logview*.jar"]

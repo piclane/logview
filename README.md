@@ -25,10 +25,10 @@ The left pane displays the file browser and the right pane displays the contents
 
 ### Header Pane
 Icon and a list of breadcrumbs according to the path of the file browser.
-This area can also be customized by editing the context.xml.
+This area can also be customized by editing the application.yml.
 
 ### File Browser Pane
-The directory specified in context.xml will be used as the root directory and its contents will be displayed.
+The directory specified in application.yml will be used as the root directory and its contents will be displayed.
 Any directory can be added to the root directory separately.
 
 You can see the following items in the file browser table.
@@ -44,21 +44,26 @@ Displays the log file selected by the file browser.
 
 ## How to use
 
-### About context.xml
+### About application.yml
 
-Normally, copy `web/META-INF/context.default.xml` to `web/META-INF/context.xml` and use it.
+Create application.yml with the following contents, and place it in the same directory as logview.jar.
 
-You can use environment variables of context.xml in the form of `$VAL` `${VAL}` `${VAL:-foo}` `${VAL:+bar}` for the value of a variable in context.xml, like Bash.
-Also, you can refer to the contents of external files with `@/path/to/file`.
+```yaml
+app:
+  fs:
+    root: ${HOME}
+    dirs:
+      log: /var/log
+```
 
-#### Variables in context.xml
-- app/logview/rootDir  
+#### Variables in application.yml
+- app.fs.root  
   Specify the root directory.
-- app/logview/dirs/&lt;any dir name&gt;  
+- app.fs.dirs  
   Specifies an additional directory to be placed directly under the root directory.
   This can be described in more than one way.
-- app/logview/header  
-  You can write HTML and place additional icons, etc. in the header section. It is recommended to read external files in the format `@/path/to/html`.
+- app.header  
+  You can write HTML and place additional icons, etc. in the header section.
   ElementUI can be used for html and can be described as follows.
   ```html
   <el-button
@@ -69,13 +74,12 @@ Also, you can refer to the contents of external files with `@/path/to/file`.
 
 ### Build
 
-Copy `web/META-INF/context.default.xml` to `web/META-INF/context.xml` and build it with your settings.
-The build requires JDK8, nodejs, and npm.
+The build requires JDK11, nodejs, and npm.
 
 ```bash
 $ cd /path/to/logview
-$ ./gradlew war
-$ mv build/libs/*.war /path/to/tomcat-base/webapps/
+$ ./gradlew bootJar
+$ mv build/libs/*.jar /path/to/app/
 ```
 
 ### Using docker
@@ -84,6 +88,6 @@ For now, you'll need to build your own docker image, but that's easy because you
 
 ```bash
 $ cd /path/to/logview
-$ docker build -t logview .
-$ docker run -d -v /path/to/local/logview/root/:/var/lib/logview/ --rm --name logview -p 8080:8080 logview:latest
+$ docker-compose build
+$ docker-compose up -d
 ```
