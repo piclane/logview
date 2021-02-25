@@ -69,6 +69,6 @@ tasks.register("buildNpm") {
     }
 }
 
-tasks.processResources {
+tasks.bootJar {
     dependsOn(tasks.getByName("buildNpm"))
 }

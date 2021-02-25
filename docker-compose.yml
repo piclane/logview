@@ -1,0 +1,13 @@
+version: '3.5'
+services:
+  logview:
+    image: logview
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/
+    ports:
+    - 8080:8080
+    volumes:
+    - "/var/logs/:/app/mnt/logs/"
+
