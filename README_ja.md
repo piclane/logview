@@ -1,5 +1,5 @@
 # logview
-新生代感覚ログビューアー
+新世代感覚ログビューアー
 
 ## 概要
 logview アプリケーションは左右ペインに分かれたログビューアーです。
@@ -25,10 +25,10 @@ logview アプリケーションは左右ペインに分かれたログビュー
 
 ### ヘッダー
 アイコンと、ファイルブラウザのパスに応じたパンくずリストが表示されます。
-また、この領域は context.xml を編集することでカスタマイズする事が可能です。
+また、この領域は application.yml を編集することでカスタマイズする事が可能です。
 
 ### ファイルブラウザ
-context.xml に指定されたディレクトリをルートディレクトリとして、その内容が表示されます。
+application.yml に指定されたディレクトリをルートディレクトリとして、その内容が表示されます。
 ルートディレクトリには任意のディレクトリを別途追加する事ができます。
 
 ファイルブラウザのテーブルには以下の項目を表示することができます。
@@ -44,21 +44,26 @@ context.xml に指定されたディレクトリをルートディレクトリ�
 
 ## 使用方法
 
-### context.xml について
+### application.yml について
 
-通常、 `web/META-INF/context.default.xml` を `web/META-INF/context.xml` にコピーして使用します。
+以下の様な内容で application.yml を作成し、 logview.jar と同階層に設置します。
 
-context.xml の変数の値には Bash の様に `$VAL` `${VAL}` `${VAL:-foo}` `${VAL:+bar}` 形式で環境変数を使用することができます。
-また、 `@/path/to/file` で外部のファイルの内容を参照できます。
+```yaml
+app:
+  fs:
+    root: ${HOME}
+    dirs:
+      log: /var/log
+```
 
-#### context.xml の変数
-- app/logview/rootDir  
+#### application.yml の変数
+- app.fs.root  
   ルートディレクトリを指定します。
-- app/logview/dirs/&lt;any dir name&gt;  
+- app.fs.dirs  
   ルートディレクトリの直下に配置する追加のディレクトリを指定します。
   これは複数記述する事ができます。
-- app/logview/header  
-  html を記述し、ヘッダ部に追加のアイコンなどを配置する事ができます。 `@/path/to/html` 形式で外部ファイルを読み込むことをお勧めします。
+- app.header  
+  html を記述し、ヘッダ部に追加のアイコンなどを配置する事ができます。 
   html には ElementUI が使用可能で以下の様に記述する事ができます。
   ```html
   <el-button
@@ -69,13 +74,12 @@ context.xml の変数の値には Bash の様に `$VAL` `${VAL}` `${VAL:-foo}` `
 
 ### ビルド
 
-`web/META-INF/context.default.xml` を `web/META-INF/context.xml` にコピーし、設定を記述してビルドします。
-ビルドには JDK8, nodejs, npm が必要です。
+ビルドには JDK11, nodejs, npm が必要です。
 
 ```bash
 $ cd /path/to/logview
-$ ./gradlew war
-$ mv build/libs/*.war /path/to/tomcat-base/webapps/
+$ ./gradlew bootJar
+$ mv build/libs/*.jar /path/to/app/
 ```
 
 ### docker を使用する
@@ -84,6 +88,6 @@ $ mv build/libs/*.war /path/to/tomcat-base/webapps/
 
 ```bash
 $ cd /path/to/logview
-$ docker build -t logview .
-$ docker run -d -v /path/to/local/logview/root/:/var/lib/logview/ --rm --name logview -p 8080:8080 logview:latest
+$ docker-compose build
+$ docker-compose up -d
 ```
