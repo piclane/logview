@@ -10,7 +10,7 @@ ADD ./ /app/
 
 WORKDIR /app/
 ENV JVM_OPTS="-Xmx2048m"
-RUN ./gradlew --no-daemon bootJar --info
+RUN ./gradlew --no-daemon bootJar
 
 FROM openjdk:11-jdk-slim
 COPY --from=build /app/build/libs/logview*.jar /app/

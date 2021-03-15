@@ -9,5 +9,6 @@ services:
     ports:
     - 8080:8080
     volumes:
-    - "/var/logs/:/app/mnt/logs/"
-
+#      - "/etc/group:/etc/group:ro"
+#      - "/etc/passwd:/etc/passwd:ro"
+      - "/var/log/:/app/mnt/log/"

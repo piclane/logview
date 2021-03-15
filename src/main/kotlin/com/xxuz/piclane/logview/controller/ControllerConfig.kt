@@ -14,7 +14,7 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer
 @EnableWebSocket
 class ControllerConfig {
     @Bean
-    fun routerFilter() =
+    fun routerFilterRegistration() =
             FilterRegistrationBean(RouterFilter()).also {
                 it.addUrlPatterns("/*")
             }

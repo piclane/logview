@@ -7,6 +7,10 @@ plugins {
     kotlin("plugin.spring") version "1.4.30"
 }
 
+apply {
+    from("build.npm.gradle.kts")
+}
+
 group = "com.xxuz.piclane"
 version = "2.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
@@ -17,9 +21,11 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    val springVer = "2.4.3"
+
+    implementation("org.springframework.boot:spring-boot-starter-actuator:${springVer}")
+    implementation("org.springframework.boot:spring-boot-starter-web:${springVer}")
+    implementation("org.springframework.boot:spring-boot-starter-websocket:${springVer}")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -27,9 +33,9 @@ dependencies {
     implementation("com.github.albfernandez:juniversalchardet:2.2.0")
     implementation("jchardet:jchardet:1.1.0")
 
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springVer}")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVer}")
     testImplementation("org.junit.jupiter:junit-jupiter-migrationsupport:5.7.1")
     testImplementation("javax.websocket:javax.websocket-api:1.1")
     testImplementation("org.hamcrest:hamcrest-all:1.3")
@@ -47,26 +53,6 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.register("buildNpm") {
-    group = "build"
-    description = "npm run build"
-    doLast {
-        project.exec {
-            commandLine("npm", "install")
-        }
-
-        project.exec {
-            commandLine("npm", "run", "build")
-        }
-
-        ant.withGroovyBuilder {
-            "move"("todir" to "${buildDir}/resources/main/static/", "overwrite" to false) {
-                "fileset"("dir" to "${projectDir}/dist/")
-            }
-        }
-    }
 }
 
 tasks.bootJar {

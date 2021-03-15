@@ -1,6 +1,16 @@
 <template>
     <div class="file-table">
         <div class="toolbar">
+          <el-tooltip
+              effect="dark"
+              content="Up">
+            <el-button
+                size="mini"
+                type="text"
+                icon="el-icon-top"
+                :disabled="!currentPath.hasParent"
+                @click="moveUp" />
+          </el-tooltip>
             <el-tooltip
                 effect="dark"
                 content="Reload">
@@ -76,129 +86,136 @@
     };
 
     export default {
-        data() {
-            return {
-                loading: false,
-                rows: [],
-                search: '',
-                sortProp: 'lastModified',
-                sortOrder: 'descending'
-            };
+      mixins: [
+        FileTableRenderers,
+        ReemittableMixin
+      ],
+      props: {
+        currentPath: {
+          type: Path,
+          required: true
+        }
+      },
+      data() {
+        return {
+          loading: false,
+          rows: [],
+          search: '',
+          sortProp: 'lastModified',
+          sortOrder: 'descending'
+        };
+      },
+      created: function () {
+        this.$on('clickLink', this.onClickLink);
+        this.reload();
+      },
+      computed: {
+        /**
+         * 表示用のレコード配列を取得します
+         *
+         * @return {[]} 表示用のレコード配列
+         */
+        viewRows: function () {
+          const q = this.search.toLowerCase(),
+              sortProp = this.sortProp,
+              sortOrder = this.sortOrder;
+          let rows = this.rows
+              .filter(row => row['name'].toLowerCase().indexOf(q) !== -1);
+          if (sortProp && sortOrder) {
+            rows = rows.map((value, index) => {
+              return {value, index};
+            })
+                .sort((a, b) => {
+                  const av = a.value[sortProp],
+                      bv = b.value[sortProp];
+                  let r;
+                  if (av < bv) {
+                    r = -1;
+                  } else if (av > bv) {
+                    r = 1;
+                  } else {
+                    r = a.index - b.index;
+                  }
+                  return r * (sortOrder === 'descending' ? -1 : 1);
+                })
+                .map(v => v.value);
+          }
+          if (this.currentPath.hasParent) {
+            rows.unshift({
+              name: '..',
+              type: 'dir',
+              readable: true
+            });
+          }
+          return rows;
+        }
+      },
+      methods: {
+        /**
+         * 再読み込みを行います
+         */
+        reload() {
+          this.loading = true;
+          listDir(this.currentPath).then(rows => {
+            this.loading = false;
+            this.rows = rows;
+          }, err => {
+            this.loading = false;
+            return showLoadFailed(`${err.response.status} ${err.response.statusText}\n\n${err.response.data}`);
+          });
         },
-        props: {
-            currentPath: {
-                type: Path,
-                required: true
-            }
-        },
-        created: function() {
-            this.$on('clickLink', this.onClickLink);
-            this.reload();
-        },
-        watch: {
-            'currentPath': 'reload'
-        },
-        methods: {
-            /**
-             * 再読み込みを行います
-             */
-            reload: function() {
-                this.loading = true;
-                listDir(this.currentPath).then(rows => {
-                    this.loading = false;
-                    this.rows = rows;
-                }, err => {
-                    this.loading = false;
-                    return showLoadFailed(`${err.response.status} ${err.response.statusText}\n\n${err.response.data}`);
-                });
-            },
 
-            /**
-             * リンクをクリックした場合に呼び出されます
-             */
-            onClickLink: function(event) {
-                const el = event.currentTarget;
-                if(event.shiftKey || event.metaKey) { // 新規タブ・新規ウィンドウで開く場合
-                    // nop
-                } else if(el.classList.contains('dir')) { // ディレクトリの場合
-                    const resource = el.resource;
-                    this.rows = [];
-                    this.$router.push(`/@${resource}`);
-                    event.stopPropagation();
-                    event.preventDefault();
-                } else  { // ファイルの場合
-                    const resource = el.resource;
-                    this.$emit('select-resource', resource);
-                    event.stopPropagation();
-                    event.preventDefault();
-                }
-            },
-
-            onChangeSort: function(e) {
-                this.sortProp = e.prop;
-                this.sortOrder = e.order;
-            },
-
-            renderCell: function(record, column, value) {
-                switch(column.property) {
-                    case 'name':
-                        return this.renderName(record, column, value);
-                    case 'lastModified':
-                        return this.renderLastModified(record, column, value);
-                    case 'size':
-                        return this.renderSize(record, column, value);
-                    case 'permissions':
-                        return this.renderPermission(record, column, value);
-                    default:
-                        return defaultRenderer(record, column, value);
-                }
-            },
+        /**
+         * 上階層に移動します
+         */
+        moveUp() {
+          this.$router.push(`/@${this.currentPath.parent()}`);
         },
-        computed: {
-            /**
-             * 表示用のレコード配列を取得します
-             *
-             * @return {[]} 表示用のレコード配列
-             */
-            viewRows: function() {
-                const q = this.search.toLowerCase(),
-                    sortProp = this.sortProp,
-                    sortOrder = this.sortOrder;
-                let rows = this.rows
-                    .filter(row => row['name'].toLowerCase().indexOf(q) !== -1);
-                if(sortProp && sortOrder) {
-                    rows = rows.map((value, index) => {
-                            return {value, index};
-                        })
-                        .sort((a, b) => {
-                            const av = a.value[sortProp],
-                                bv = b.value[sortProp];
-                            let r;
-                            if (av < bv) {
-                                r = -1;
-                            } else if (av > bv) {
-                                r = 1;
-                            } else {
-                                r = a.index - b.index;
-                            }
-                            return r * (sortOrder === 'descending' ? -1 : 1);
-                        })
-                        .map(v => v.value);
-                }
-                if(this.currentPath.hasParent) {
-                    rows.unshift({
-                        name: '..',
-                        type: 'dir',
-                        readable: true
-                    });
-                }
-                return rows;
-            }
+
+        /**
+         * リンクをクリックした場合に呼び出されます
+         */
+        onClickLink(event) {
+          const el = event.currentTarget;
+          if (event.shiftKey || event.metaKey) { // 新規タブ・新規ウィンドウで開く場合
+            // nop
+          } else if (el.classList.contains('dir')) { // ディレクトリの場合
+            const resource = el.resource;
+            this.rows = [];
+            this.$router.push(`/@${resource}`);
+            event.stopPropagation();
+            event.preventDefault();
+          } else { // ファイルの場合
+            const resource = el.resource;
+            this.$emit('select-resource', resource);
+            event.stopPropagation();
+            event.preventDefault();
+          }
         },
-        mixins: [
-            FileTableRenderers,
-            ReemittableMixin
-        ]
+
+        onChangeSort(e) {
+          this.sortProp = e.prop;
+          this.sortOrder = e.order;
+        },
+
+        renderCell(record, column, value) {
+          switch (column.property) {
+            case 'name':
+              return this.renderName(record, column, value);
+            case 'lastModified':
+              return this.renderLastModified(record, column, value);
+            case 'size':
+              return this.renderSize(record, column, value);
+            case 'permissions':
+              return this.renderPermission(record, column, value);
+            default:
+              return defaultRenderer(record, column, value);
+          }
+        },
+      },
+      watch: {
+        'currentPath': 'reload'
+      },
     }
 </script>
 

@@ -8,7 +8,6 @@ import org.springframework.web.socket.WebSocketSession
 import java.io.IOException
 import java.util.concurrent.*
 import javax.annotation.PreDestroy
-import javax.servlet.ServletContextListener
 
 /**
  * セッションと、セッションに紐付くタスクを管理します
@@ -16,7 +15,7 @@ import javax.servlet.ServletContextListener
  * @author yohei_hina
  */
 @Component
-class SessionTasks : ServletContextListener {
+class SessionTasks {
     /** スレッドキャッシュ  */
     private val es = Executors.newCachedThreadPool()
 
