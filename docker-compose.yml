@@ -9,6 +9,10 @@ services:
     ports:
     - 8080:8080
     volumes:
+# To get the username and group name in linux environment
 #      - "/etc/group:/etc/group:ro"
 #      - "/etc/passwd:/etc/passwd:ro"
-      - "/var/log/:/app/mnt/log/"
+# Virtual directory under the root
+#      - "/var/log/:/app/mnt/log/:ro"
+# Any directory as the root directory
+#      - "/var/log/:/app/mnt/:ro"
